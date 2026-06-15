@@ -1,0 +1,20 @@
+# Dev
+node_modules
+.next
+.git
+.gitignore
+
+# Env — NUNCA no container
+.env
+.env.local
+.env*.local
+
+# Dev only
+docker-compose.yml
+SETUP.md
+*.md
+*.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db

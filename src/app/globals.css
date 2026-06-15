@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --green:       #1DB954;
+    --green-dark:  #0f9c40;
+    --green-light: #e8f8ee;
+    --orange:      #FF6B00;
+    --navy:        #0D1B2A;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    color: #0D1B2A;
+    background: #fff;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .slider-green-orange {
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    background: linear-gradient(
+      to right,
+      #1DB954 0%,
+      #1DB954 var(--pct, 20%),
+      #FF6B00 var(--pct, 20%),
+      #FF6B00 100%
+    );
+  }
+  .slider-green-orange::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #1DB954;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  .slider-green-orange::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #1DB954;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}

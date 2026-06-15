@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  
+}
+
+// ─────────────────────────────────────────────
+// USUÁRIOS E AUTENTICAÇÃO
+// ─────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENTE)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  afiliado  Afiliado?
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  FINANCEIRO
+  AFILIADO
+  CLIENTE
+}
+
+// ─────────────────────────────────────────────
+// AFILIADOS
+// ─────────────────────────────────────────────
+model Afiliado {
+  id               String         @id @default(cuid())
+  nome             String
+  cpf              String         @unique
+  cpfHash          String         // hash para busca sem expor o CPF
+  telefone         String
+  email            String?
+  slug             String         @unique
+  status           AfiliadoStatus @default(PENDENTE)
+  nivel            AfiliadoNivel  @default(BRONZE)
+  codigoIndicacao  String?
+  totalCliques     Int            @default(0)
+  totalLeads       Int            @default(0)
+  totalAprovados   Int            @default(0)
+  totalComissoes   Float          @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  leads     Lead[]
+  comissoes Comissao[]
+
+  @@map("afiliados")
+}
+
+enum AfiliadoStatus {
+  PENDENTE
+  ATIVO
+  INATIVO
+}
+
+enum AfiliadoNivel {
+  BRONZE
+  PRATA
+  GOLD
+  DIAMANTE
+}
+
+// ─────────────────────────────────────────────
+// LEADS
+// ─────────────────────────────────────────────
+model Lead {
+  id            String      @id @default(cuid())
+  nome          String
+  email         String
+  cpf           String      // criptografado em repouso
+  cpfHash       String      // hash SHA256 para deduplicação (sem expor CPF)
+  telefone      String
+  produto       Produto
+  valor         Float
+  parcelas      Int
+  parcelaMensal Float
+  status        LeadStatus  @default(NOVO)
+  origem        Origem      @default(ORGANICO)
+  observacoes   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  afiliadoId  String?
+  afiliado    Afiliado?  @relation(fields: [afiliadoId], references: [id])
+  comissao    Comissao?
+  documentos  Documento[]
+
+  @@index([cpfHash])
+  @@index([status])
+  @@index([afiliadoId])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NOVO
+  EM_ANALISE
+  PROPOSTA_ENVIADA
+  CONTRATO_ASSINADO
+  APROVADO
+  RECUSADO
+}
+
+enum Produto {
+  PESSOAL
+  GARANTIA
+  EMPRESARIAL
+  CONSIGNADO
+  FGTS
+}
+
+enum Origem {
+  ORGANICO
+  AFILIADO
+  WHATSAPP
+  DIRETO
+}
+
+// ─────────────────────────────────────────────
+// COMISSÕES
+// ─────────────────────────────────────────────
+model Comissao {
+  id          String          @id @default(cuid())
+  valor       Float
+  status      ComissaoStatus  @default(PENDENTE)
+  pixChave    String?         // chave PIX do afiliado no momento do pagamento
+  paidAt      DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  leadId     String    @unique
+  lead       Lead      @relation(fields: [leadId], references: [id])
+  afiliadoId String
+  afiliado   Afiliado  @relation(fields: [afiliadoId], references: [id])
+
+  @@index([afiliadoId])
+  @@index([status])
+  @@map("comissoes")
+}
+
+enum ComissaoStatus {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENTOS
+// ─────────────────────────────────────────────
+model Documento {
+  id          String   @id @default(cuid())
+  nome        String
+  tipo        String   // CNH, comprovante_renda, etc.
+  url         String   // URL privada no Cloud Storage
+  tamanhoKb   Int
+  mimeType    String
+  uploadadoPor String  // userId de quem fez upload
+  createdAt   DateTime @default(now())
+
+  leadId  String
+  lead    Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@map("documentos")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG (LGPD + Auditoria Bancária)
+// ─────────────────────────────────────────────
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // ex: LEAD_CREATED, LOGIN_FAILED
+  severity    String   @default("info") // info | warning | critical
+  userId      String?
+  userEmail   String?
+  userRole    String?
+  targetId    String?
+  targetType  String?
+  ipAddress   String
+  userAgent   String?
+  details     Json?    // dados extras sem informações sensíveis
+  success     Boolean  @default(true)
+  errorMsg    String?
+  createdAt   DateTime @default(now())
+
+  user  User?  @relation(fields: [userId], references: [id])
+
+  @@index([action])
+  @@index([userId])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURAÇÕES DO SISTEMA
+// ─────────────────────────────────────────────
+model Config {
+  id        String   @id @default(cuid())
+  chave     String   @unique
+  valor     String
+  descricao String?
+  updatedAt DateTime @updatedAt
+
+  @@map("configs")
+}

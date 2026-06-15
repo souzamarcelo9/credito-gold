@@ -1,0 +1,56 @@
+# Cloud Build — CI/CD automático
+# Dispara a cada push na branch main
+# Faz build, push da imagem e deploy no Cloud Run
+
+steps:
+  # 1. Build da imagem Docker
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}"
+      - -t
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest"
+      - .
+    id: "build"
+
+  # 2. Push para o Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - "--all-tags"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}"
+    id: "push"
+    waitFor: ["build"]
+
+  # 3. Deploy no Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE}"
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-secrets=DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,CPF_HASH_SALT=CPF_HASH_SALT:latest
+      - --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_CLOUDSQL_INSTANCE}
+      - --set-env-vars=NEXT_PUBLIC_BASE_URL=https://${_SERVICE_URL},NODE_ENV=production
+      - --memory=512Mi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=10
+      - --concurrency=80
+    id: "deploy"
+    waitFor: ["push"]
+
+substitutions:
+  _REGION:            "us-central1"
+  _REPO:              "creditogold"
+  _SERVICE:           "creditogold-app"
+  _CLOUDSQL_INSTANCE: "creditogold-db"
+  _SERVICE_URL:       "SEU-DOMINIO.run.app"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
