@@ -24,6 +24,7 @@ async function main() {
 
   const adminPass = await bcrypt.hash("Admin@123", 12)
   const finPass   = await bcrypt.hash("Fin@123",   12)
+  const afiliadoPass = await bcrypt.hash("Afil@123", 12)
 
   await prisma.user.upsert({
     where:  { email: "admin@creditogold.com.br" },
@@ -36,6 +37,17 @@ async function main() {
     update: {},
     create: { nome: "Equipe Financeiro", email: "financeiro@creditogold.com.br", password: finPass, role: "FINANCEIRO" },
   })
+
+  await prisma.user.upsert({
+  where:  { email: "afiliado@creditogold.com.br" },
+  update: {},
+  create: {
+    nome:     "João Afiliado",
+    email:    "afiliado@creditogold.com.br",
+    password: afiliadoPass,
+    role:     "AFILIADO",
+  },
+})
 
   console.log("✅ Usuários criados")
 

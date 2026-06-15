@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { PeriodFilter, type DateRange } from "@/components/dashboard/PeriodFilter"
 import { MiniChart } from "@/components/dashboard/MiniChart"
 import { formatCurrency } from "@/lib/utils"
+import Link from "next/link"
 
 interface AfiliadoData {
   afiliado: { id:string; nome:string; slug:string; nivel:string; totalCliques:number; totalLeads:number; totalAprovados:number; totalComissoes:number }
@@ -29,13 +30,13 @@ const NIVEL_COLOR: Record<string,string> = {
 }
 
 const NAV_ITEMS = [
-  { icon:"📊", label:"Dashboard",          active:true  },
-  { icon:"👥", label:"Referred Customers", active:false },
-  { icon:"👁️", label:"Referred Visitors",  active:false },
-  { icon:"💸", label:"Payments",           active:false },
-  { icon:"🎨", label:"Promo Material",     active:false },
-  { icon:"📚", label:"Resources",          active:false },
-  { icon:"⚙️", label:"Settings",           active:false },
+  { icon:"📊", label:"Dashboard",             active:true  },
+  { icon:"👥", label:"Clientes Relacionados", active:false },
+  { icon:"👁️", label:"Visitantes",            active:false },
+  { icon:"💸", label:"Pagamentos",            active:false },
+  { icon:"🎨", label:"Promoções",             active:false },
+  { icon:"📚", label:"Recursos",             active:false },
+  { icon:"⚙️", label:"Ajustes",              active:false },
 ]
 
 export default function PainelAfiliadoPage() {
@@ -121,9 +122,9 @@ export default function PainelAfiliadoPage() {
             className="w-full rounded-xl bg-[#FF6B00] py-3 font-['Sora'] text-sm font-bold text-white transition-colors hover:bg-[#e06000]">
             {copied ? "✓ Copiado!" : "+ Copiar Meu Link"}
           </button>
-          <a href="/" className="block text-center font-['Sora'] text-xs text-[#475569] hover:text-white transition-colors">
+          <Link href="/" className="block text-center font-['Sora'] text-xs text-[#475569] hover:text-white transition-colors">
             ← Voltar ao site
-          </a>
+          </Link>
         </div>
       </aside>
 
