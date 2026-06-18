@@ -16,7 +16,7 @@ export function FloatingParticles() {
     canvas.width  = W
     canvas.height = H
 
-    const COLORS = ["rgba(255,255,255,0.15)", "rgba(255,107,0,0.2)", "rgba(255,255,255,0.08)"]
+    const COLORS = ["rgba(29,185,84,0.12)", "rgba(255,107,0,0.10)", "rgba(29,185,84,0.06)"]
 
     const particles = Array.from({ length: 28 }, () => ({
       x:    Math.random() * W,

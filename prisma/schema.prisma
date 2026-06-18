@@ -81,14 +81,16 @@ enum AfiliadoNivel {
 model Lead {
   id            String      @id @default(cuid())
   nome          String
-  email         String
+  email         String      @default("")
   cpf           String      // criptografado em repouso
-  cpfHash       String      // hash SHA256 para deduplicação (sem expor CPF)
+  cpfHash       String      // hash SHA256 para deduplicação
   telefone      String
   produto       Produto
   valor         Float
-  parcelas      Int
-  parcelaMensal Float
+  parcelas      Int         @default(0)
+  parcelaMensal Float       @default(0)
+  cidade        String?
+  estado        String?
   status        LeadStatus  @default(NOVO)
   origem        Origem      @default(ORGANICO)
   observacoes   String?
@@ -96,15 +98,39 @@ model Lead {
   updatedAt     DateTime    @updatedAt
 
   afiliadoId  String?
-  afiliado    Afiliado?  @relation(fields: [afiliadoId], references: [id])
+  afiliado    Afiliado?    @relation(fields: [afiliadoId], references: [id])
   comissao    Comissao?
   documentos  Documento[]
+  dadosEnergia LeadEnergia?
 
   @@index([cpfHash])
   @@index([status])
+  @@index([produto])
   @@index([afiliadoId])
   @@index([createdAt])
   @@map("leads")
+}
+
+// Dados complementares preenchidos pelo correspondente
+model LeadEnergia {
+  id                  String   @id @default(cuid())
+  concessionaria      String?
+  numeroInstalacao    String?
+  numeroCliente       String?
+  titularConta        String?
+  cpfTitular          String?
+  valorMedioFatura    Float?
+  possuiDebitos       Boolean  @default(false)
+  dataVencimento      String?
+  observacoesInternas String?
+  preenchidoPor       String?  // userId do operador
+  preenchidoEm        DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  leadId String @unique
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@map("leads_energia")
 }
 
 enum LeadStatus {
@@ -122,7 +148,9 @@ enum Produto {
   EMPRESARIAL
   CONSIGNADO
   FGTS
+  ENERGIA
 }
+
 
 enum Origem {
   ORGANICO

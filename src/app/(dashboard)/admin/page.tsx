@@ -154,8 +154,8 @@ export default function AdminPage() {
               )}
             </div>
             <div className="flex gap-2 px-6 pb-3">
-              {(stats?.serie.labels ?? Array(7).fill("...")).map((l: string) => (
-                <div key={l} className="flex-1 text-center font-['Sora'] text-[0.62rem] text-[#9ca3af]">{l}</div>
+              {(stats?.serie.labels ?? Array(7).fill("...")).map((l: string, i: number) => (
+                <div key={`${l}-${i}`} className="flex-1 text-center font-['Sora'] text-[0.62rem] text-[#9ca3af]">{l}</div>
               ))}
             </div>
           </div>

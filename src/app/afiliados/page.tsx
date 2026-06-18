@@ -6,21 +6,24 @@ import { useApi } from "@/hooks/useApi"
 import { formatCPF, formatPhone } from "@/lib/utils"
 
 export default function AfiliadosPage() {
-  const [form, setForm]       = useState({ nome: "", cpf: "", telefone: "", email: "", codigoIndicacao: "" })
+  const [form, setForm]       = useState({ nome: "", cpf: "", telefone: "", email: "", codigoIndicacao: "", senha: "", confirmarSenha: "" })
   const [hasCode, setHasCode] = useState(false)
   const [errors, setErrors]   = useState<Record<string, string>>({})
   const [link, setLink]       = useState("")
   const [success, setSuccess] = useState(false)
+  const [showSenha, setShowSenha]           = useState(false)
+  const [showConfirmar, setShowConfirmar]   = useState(false)
   const { post, loading }     = useApi()
 
   function validate() {
     const e: Record<string, string> = {}
-    if (form.nome.trim().length < 3)                         e.nome     = "Nome obrigatório"
-    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(form.cpf))     e.cpf      = "CPF inválido"
-    if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(form.telefone)) e.telefone = "Telefone inválido"
+    if (form.nome.trim().length < 3)                         e.nome          = "Nome obrigatório"
+    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(form.cpf))     e.cpf           = "CPF inválido"
+    if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(form.telefone)) e.telefone      = "Telefone inválido"
+    if (form.senha.length < 8)                               e.senha         = "Senha deve ter pelo menos 8 caracteres"
+    if (form.senha !== form.confirmarSenha)                  e.confirmarSenha= "As senhas não coincidem"
     return e
   }
-
   async function handleSubmit() {
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
@@ -48,7 +51,7 @@ export default function AfiliadosPage() {
       <div className="grid min-h-screen pt-[70px] md:grid-cols-2">
 
         {/* ESQUERDA — fundo cinza claro com bloco verde */}
-        <div className="relative flex flex-col justify-center overflow-hidden bg-white px-[8%] py-16 border-r border-[#e5e7eb]">
+        <div className="relative flex flex-col justify-center overflow-hidden bg-white px-[8%] py-16">
           <div className="relative z-10">
             {/* Ícones */}
             <div className="mb-6 flex gap-3">
@@ -97,7 +100,7 @@ export default function AfiliadosPage() {
         </div>
 
         {/* DIREITA — formulário em card */}
-        <div className="flex items-center justify-center bg-[#f9fafb] px-6 py-16 md:px-12">
+        <div className="flex items-center justify-center bg-white px-6 py-16 md:px-12">
           <div className="w-full max-w-[500px] rounded-3xl bg-white p-8 shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#e5e7eb] border-t-4 border-t-[#1DB954]">
 
             {success ? (
@@ -184,6 +187,45 @@ export default function AfiliadosPage() {
                     </div>
                   </div>
 
+                  {/* Senha */}
+                  <div>
+                    <label className="mb-1.5 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">Senha</label>
+                    <div className="relative">
+                      <input
+                        type={showSenha ? "text" : "password"}
+                        placeholder="Mínimo 8 caracteres"
+                        value={form.senha}
+                        onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
+                        className={`w-full rounded-xl border-2 bg-[#f9fafb] px-4 py-3 pr-12 font-sans text-sm text-[#0D1B2A] outline-none transition-all placeholder:text-[#9ca3af] focus:border-[#1DB954] focus:bg-white ${errors.senha ? "border-red-400" : "border-[#e5e7eb]"}`} />
+                      <button type="button" onClick={() => setShowSenha(s => !s)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#1DB954] transition-colors">
+                        {showSenha ? "🙈" : "👁️"}
+                      </button>
+                    </div>
+                    {errors.senha && <p className="mt-1 text-xs text-red-500">{errors.senha}</p>}
+                  </div>
+
+                  {/* Confirmar Senha */}
+                  <div>
+                    <label className="mb-1.5 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">Confirmar Senha</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmar ? "text" : "password"}
+                        placeholder="Repita a senha"
+                        value={form.confirmarSenha}
+                        onChange={e => setForm(f => ({ ...f, confirmarSenha: e.target.value }))}
+                        className={`w-full rounded-xl border-2 bg-[#f9fafb] px-4 py-3 pr-12 font-sans text-sm text-[#0D1B2A] outline-none transition-all placeholder:text-[#9ca3af] focus:border-[#1DB954] focus:bg-white ${errors.confirmarSenha ? "border-red-400" : form.confirmarSenha && form.senha === form.confirmarSenha ? "border-[#1DB954]" : "border-[#e5e7eb]"}`} />
+                      <button type="button" onClick={() => setShowConfirmar(s => !s)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#1DB954] transition-colors">
+                        {showConfirmar ? "🙈" : "👁️"}
+                      </button>
+                    </div>
+                    {errors.confirmarSenha && <p className="mt-1 text-xs text-red-500">{errors.confirmarSenha}</p>}
+                    {form.confirmarSenha && form.senha === form.confirmarSenha && (
+                      <p className="mt-1 text-xs font-semibold text-[#1DB954]">✓ Senhas coincidem</p>
+                    )}
+                  </div>
+
                   {/* Checkbox código */}
                   <div className="flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-3.5">
                     <input type="checkbox" id="has-code" checked={hasCode}
@@ -261,10 +303,10 @@ export default function AfiliadosPage() {
           <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
             <table className="w-full">
               <thead>
-                <tr className="bg-[#0D1B2A]">
-                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#94a3b8]">Produto</th>
-                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#94a3b8]">Comissão</th>
-                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#94a3b8]">Prazo</th>
+                <tr className="bg-[#f4f6f8]">
+                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Produto</th>
+                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Comissão</th>
+                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Prazo</th>
                 </tr>
               </thead>
               <tbody>
@@ -291,18 +333,19 @@ export default function AfiliadosPage() {
       </section>
 
       {/* CTA final */}
-      <section className="bg-[#0D1B2A] px-[7%] py-16 text-center">
-        <h2 className="font-['Sora'] text-3xl font-extrabold text-white">Pronto para começar a ganhar?</h2>
-        <p className="mx-auto mt-3 max-w-[440px] text-[#94a3b8]">Cadastre-se agora, é gratuito. Seu primeiro link em menos de 2 minutos.</p>
+      <section className="relative overflow-hidden bg-[#f9fafb] px-[7%] py-16 text-center">
+        <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#1DB954] via-[#FF6B00] to-[#1DB954]" />
+        <h2 className="font-['Sora'] text-3xl font-extrabold text-[#0D1B2A]">Pronto para começar a ganhar?</h2>
+        <p className="mx-auto mt-3 max-w-[440px] text-[#6b7280]">Cadastre-se agora, é gratuito. Seu primeiro link em menos de 2 minutos.</p>
         <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#FF6B00] px-8 py-4 font-['Sora'] text-base font-bold uppercase tracking-wide text-white shadow-[0_4px_20px_rgba(255,107,0,0.4)] transition-all hover:-translate-y-0.5 hover:bg-[#e06000]">
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#FF6B00] px-8 py-4 font-['Sora'] text-base font-bold uppercase tracking-wide text-white shadow-[0_4px_20px_rgba(255,107,0,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#e06000]">
           Criar meu link agora →
         </button>
       </section>
 
       {/* Footer simples */}
-      <footer className="bg-[#060e18] px-[7%] py-6 text-center">
-        <p className="text-xs text-[#475569]">
+      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
+        <p className="text-xs text-[#6b7280]">
           © 2026 Crédito Gold Soluções Financeiras ·{" "}
           <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" "}·{" "}

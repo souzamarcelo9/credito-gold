@@ -32,6 +32,7 @@ const ADMIN_SECTIONS: SidebarSection[] = [
     items: [
       { icon: "👥", label: "Clientes",     href: "/admin/clientes" },
       { icon: "🎯", label: "Leads",        href: "/admin/leads",     badge: 24 },
+      { icon: "⚡", label: "Energia",      href: "/admin/energia"               },
       { icon: "🔗", label: "Afiliados",    href: "/admin/afiliados" },
       { icon: "📋", label: "Propostas",    href: "/admin/propostas" },
     ],
