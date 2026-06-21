@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status  = searchParams.get("status")  ?? undefined
   const search  = searchParams.get("search")  ?? undefined
+  const produto = searchParams.get("produto") ?? undefined
   const page    = parseInt(searchParams.get("page")  ?? "1")
   const limit   = parseInt(searchParams.get("limit") ?? "20")
 
@@ -22,7 +23,8 @@ export async function GET(req: NextRequest) {
     if (!prisma) throw new Error("no-prisma")
 
     const where: any = {}
-    if (status) where.status = status.toUpperCase()
+    if (status)  where.status  = status.toUpperCase()
+    if (produto) where.produto = produto.toUpperCase()
     if (search) where.OR = [
       { nome:    { contains: search, mode: "insensitive" } },
       { email:   { contains: search, mode: "insensitive" } },
@@ -35,7 +37,10 @@ export async function GET(req: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: { afiliado: { select: { slug: true, nome: true } } },
+        include: {
+          afiliado:     { select: { slug: true, nome: true } },
+          dadosEnergia: true,
+        },
       }),
       prisma.lead.count({ where }),
     ])
@@ -44,8 +49,9 @@ export async function GET(req: NextRequest) {
     return ok({ data: safe, total, page, totalPages: Math.ceil(total / limit) })
   } catch {
     let data = MOCK_LEADS
-    if (status) data = data.filter(l => l.status === status.toUpperCase())
-    if (search) data = data.filter(l => l.nome.toLowerCase().includes(search.toLowerCase()))
+    if (status)  data = data.filter(l => l.status === status.toUpperCase())
+    if (produto) data = data.filter(l => l.produto === produto.toUpperCase())
+    if (search)  data = data.filter(l => l.nome.toLowerCase().includes(search.toLowerCase()))
     return ok({ data, total: data.length, page: 1, totalPages: 1 })
   }
 }

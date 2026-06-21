@@ -46,6 +46,15 @@ export const PRODUTOS: Record<string, Produto> = {
     prazoMin: 6,
     prazoMax: 24,
   },
+  energia: {
+    key: "energia",
+    label: "Empréstimo na Conta de Luz",
+    taxa: 0.0349,
+    valorMin: 300,
+    valorMax: 4000,
+    prazoMin: 6,
+    prazoMax: 24,
+  },
 }
 
 export const COMISSOES: Record<string, number> = {
@@ -54,4 +63,5 @@ export const COMISSOES: Record<string, number> = {
   empresarial: 250,
   consignado:  120,
   fgts:        80,
+  energia:     60,
 }

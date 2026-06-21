@@ -87,7 +87,8 @@ export async function proxy(req: NextRequest) {
     }
 
     // Verificação de role para rotas financeiras
-    if (pathname.startsWith("/financeiro") && token.role !== "admin" && token.role !== "financeiro") {
+    const role = String(token.role ?? "").toUpperCase()
+    if (pathname.startsWith("/financeiro") && role !== "ADMIN" && role !== "FINANCEIRO") {
       return NextResponse.json(
         { success: false, message: "Acesso negado" },
         { status: 403 }

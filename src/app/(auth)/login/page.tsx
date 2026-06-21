@@ -40,6 +40,8 @@ export default function LoginPage() {
 
   if (role === "AFILIADO") {
     window.location.href = "/painel-afiliado"
+  } else if (role === "FINANCEIRO") {
+    window.location.href = "/financeiro"
   } else {
     window.location.href = "/admin"
   }

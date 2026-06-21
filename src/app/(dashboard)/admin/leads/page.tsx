@@ -1,15 +1,20 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSession } from "next-auth/react"
 import { Sidebar } from "@/components/dashboard/Sidebar"
 import { PeriodFilter, type DateRange } from "@/components/dashboard/PeriodFilter"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatCPF, formatPhone } from "@/lib/utils"
 
 interface Lead {
   id: string; nome: string; email: string; telefone: string
   produto: string; valor: number; parcelas: number; parcelaMensal: number
   status: string; origem: string; createdAt: string
   afiliado?: { slug: string; nome: string } | null
+  dadosEnergia?: {
+    concessionaria?: string; numeroInstalacao?: string; numeroCliente?: string
+    titularConta?: string; valorMedioFatura?: number; possuiDebitos?: boolean
+  } | null
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -36,6 +41,10 @@ const ORIGEM_STYLE: Record<string, string> = {
 }
 
 export default function AdminLeadsPage() {
+  const { data: session } = useSession()
+  const userEmail = (session?.user as any)?.email ?? ""
+  const canExport = userEmail === "admin@creditogold.com.br"
+
   const [leads, setLeads]           = useState<Lead[]>([])
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState("")
@@ -46,6 +55,12 @@ export default function AdminLeadsPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [selected, setSelected]     = useState<Lead | null>(null)
   const [range, setRange]           = useState<DateRange>({ period:"mensal", label:"30 dias" })
+  const [showNovoLead, setShowNovoLead] = useState(false)
+  const [novoLead, setNovoLead] = useState({
+    nome:"", cpf:"", telefone:"", email:"", produto:"PESSOAL", valor:"", cidade:"", estado:"",
+  })
+  const [novoLeadSaving, setNovoLeadSaving] = useState(false)
+  const [novoLeadMsg, setNovoLeadMsg]       = useState("")
   const LIMIT = 15
 
   const fetchLeads = useCallback(async () => {
@@ -73,6 +88,49 @@ export default function AdminLeadsPage() {
     return () => clearTimeout(t)
   }, [search])
 
+  async function saveNovoLead() {
+    if (novoLead.nome.trim().length < 3) { setNovoLeadMsg("❌ Nome obrigatório"); return }
+    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(novoLead.cpf)) { setNovoLeadMsg("❌ CPF inválido (000.000.000-00)"); return }
+    if (novoLead.telefone.length < 14) { setNovoLeadMsg("❌ Telefone inválido"); return }
+
+    setNovoLeadSaving(true); setNovoLeadMsg("")
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({
+          nome:     novoLead.nome,
+          email:    novoLead.email || "nao-informado@creditogold.com.br",
+          cpf:      novoLead.cpf,
+          telefone: novoLead.telefone,
+          produto:  novoLead.produto.toLowerCase(),
+          valor:    parseFloat(novoLead.valor) || 1000,
+          parcelas: 12,
+          parcelaMensal: 0,
+          cidade:   novoLead.cidade || undefined,
+          estado:   novoLead.estado || undefined,
+          origem:   "direto",
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setNovoLeadMsg("✅ Lead cadastrado com sucesso!")
+        setTimeout(() => {
+          setShowNovoLead(false)
+          setNovoLead({ nome:"", cpf:"", telefone:"", email:"", produto:"PESSOAL", valor:"", cidade:"", estado:"" })
+          setNovoLeadMsg("")
+          fetchLeads()
+        }, 1200)
+      } else {
+        setNovoLeadMsg(`❌ ${json.message ?? "Erro ao cadastrar"}`)
+      }
+    } catch {
+      setNovoLeadMsg("❌ Erro de conexão")
+    } finally {
+      setNovoLeadSaving(false)
+    }
+  }
+
   async function updateStatus(id: string, status: string) {
     await fetch(`/api/leads/${id}`, {
       method: "PATCH",
@@ -84,6 +142,10 @@ export default function AdminLeadsPage() {
   }
 
   function exportCSV() {
+    if (!canExport) {
+      alert("Apenas o administrador principal pode exportar os leads.")
+      return
+    }
     const headers = ["Nome","Email","Telefone","Produto","Valor","Parcelas","Status","Origem","Afiliado","Data"]
     const rows = leads.map(l => [
       l.nome, l.email, l.telefone,
@@ -119,13 +181,22 @@ export default function AdminLeadsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setShowNovoLead(true)}
+              className="rounded-full bg-[#FF6B00] px-5 py-2 font-['Sora'] text-xs font-bold text-white hover:bg-[#e06000]">
+              + Novo Lead
+            </button>
             <button onClick={fetchLeads}
               className="rounded-full border-2 border-[#e5e7eb] px-4 py-2 font-['Sora'] text-xs font-bold text-[#6b7280] hover:border-[#1DB954] hover:text-[#1DB954]">
               ↻ Atualizar
             </button>
             <button onClick={exportCSV}
-              className="rounded-full bg-[#1DB954] px-5 py-2 font-['Sora'] text-xs font-bold text-white hover:bg-[#0f9c40]">
-              ↓ Exportar CSV
+              title={canExport ? "Exportar leads em CSV" : "Apenas o admin principal pode exportar"}
+              className={`rounded-full px-5 py-2 font-['Sora'] text-xs font-bold transition-all ${
+                canExport
+                  ? "bg-[#1DB954] text-white hover:bg-[#0f9c40]"
+                  : "bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed"
+              }`}>
+              {canExport ? "↓ Exportar CSV" : "🔒 Exportar CSV"}
             </button>
           </div>
         </div>
@@ -311,6 +382,43 @@ export default function AdminLeadsPage() {
                   </span>
                 </div>
 
+                {/* Dados da conta de energia (se aplicável) */}
+                {selected.dadosEnergia && (
+                  <div className="mt-4 rounded-xl border border-[#1DB954]/20 bg-[#f0fdf4] p-3.5">
+                    <div className="mb-2 flex items-center gap-1.5 font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#0f9c40]">
+                      ⚡ Dados da Conta de Energia
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { label:"Concessionária", value: selected.dadosEnergia.concessionaria },
+                        { label:"Nº Instalação",  value: selected.dadosEnergia.numeroInstalacao },
+                        { label:"Nº Cliente",     value: selected.dadosEnergia.numeroCliente },
+                        { label:"Titular",        value: selected.dadosEnergia.titularConta },
+                        { label:"Valor médio",    value: selected.dadosEnergia.valorMedioFatura ? formatCurrency(selected.dadosEnergia.valorMedioFatura) : undefined },
+                        { label:"Débitos",        value: selected.dadosEnergia.possuiDebitos !== undefined ? (selected.dadosEnergia.possuiDebitos ? "Sim" : "Não") : undefined },
+                      ].filter(i => i.value).map(item => (
+                        <div key={item.label} className="flex justify-between text-xs">
+                          <span className="text-[#6b7280]">{item.label}</span>
+                          <span className="font-semibold text-[#0D1B2A]">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <a href={`/admin/energia`}
+                      className="mt-2 block text-center font-['Sora'] text-[0.65rem] font-bold text-[#0f9c40] no-underline hover:underline">
+                      Editar na tela de Energia →
+                    </a>
+                  </div>
+                )}
+                {selected.produto === "ENERGIA" && !selected.dadosEnergia && (
+                  <div className="mt-4 rounded-xl border border-[#FF6B00]/30 bg-[#fff3e8] p-3.5 text-center">
+                    <div className="font-['Sora'] text-xs font-bold text-[#c2410c]">⚡ Dados da conta pendentes</div>
+                    <a href="/admin/energia"
+                      className="mt-1 block font-['Sora'] text-[0.65rem] font-bold text-[#c2410c] underline">
+                      Preencher agora →
+                    </a>
+                  </div>
+                )}
+
                 {/* Atualizar status */}
                 <div className="mt-4">
                   <div className="mb-2 font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#9ca3af]">Atualizar status</div>
@@ -350,6 +458,90 @@ export default function AdminLeadsPage() {
         </div>
 
       </main>
+
+      {/* Modal Novo Lead */}
+      {showNovoLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setShowNovoLead(false)}>
+          <div className="w-full max-w-[480px] rounded-3xl bg-white p-7 shadow-[0_24px_80px_rgba(0,0,0,0.25)]"
+            onClick={e => e.stopPropagation()}>
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="font-['Sora'] text-lg font-extrabold text-[#0D1B2A]">+ Cadastrar Lead Manual</h2>
+              <button onClick={() => setShowNovoLead(false)} className="text-[#9ca3af] hover:text-[#0D1B2A]">✕</button>
+            </div>
+            <p className="mb-5 font-['Sora'] text-xs text-[#9ca3af]">Para clientes atendidos presencialmente ou em campanhas</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Nome completo</label>
+                <input type="text" placeholder="Nome do cliente" value={novoLead.nome}
+                  onChange={e => setNovoLead(f => ({...f, nome: e.target.value}))}
+                  className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">CPF</label>
+                  <input type="text" placeholder="000.000.000-00" maxLength={14} value={novoLead.cpf}
+                    onChange={e => setNovoLead(f => ({...f, cpf: formatCPF(e.target.value)}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Telefone</label>
+                  <input type="tel" placeholder="(00) 0 0000-0000" maxLength={16} value={novoLead.telefone}
+                    onChange={e => setNovoLead(f => ({...f, telefone: formatPhone(e.target.value)}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">E-mail (opcional)</label>
+                <input type="email" placeholder="email@exemplo.com" value={novoLead.email}
+                  onChange={e => setNovoLead(f => ({...f, email: e.target.value}))}
+                  className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Produto</label>
+                  <select value={novoLead.produto} onChange={e => setNovoLead(f => ({...f, produto: e.target.value}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white">
+                    {Object.entries(PRODUTO_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Valor desejado</label>
+                  <input type="number" placeholder="Ex: 5000" value={novoLead.valor}
+                    onChange={e => setNovoLead(f => ({...f, valor: e.target.value}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Cidade</label>
+                  <input type="text" placeholder="Cidade" value={novoLead.cidade}
+                    onChange={e => setNovoLead(f => ({...f, cidade: e.target.value}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+                </div>
+                <div>
+                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Estado</label>
+                  <input type="text" placeholder="UF" maxLength={2} value={novoLead.estado}
+                    onChange={e => setNovoLead(f => ({...f, estado: e.target.value.toUpperCase()}))}
+                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white" />
+                </div>
+              </div>
+
+              {novoLeadMsg && (
+                <div className={`rounded-xl px-3 py-2 text-center font-['Sora'] text-sm font-bold ${novoLeadMsg.startsWith("✅") ? "bg-[#e8f8ee] text-[#0f9c40]" : "bg-red-50 text-red-600"}`}>
+                  {novoLeadMsg}
+                </div>
+              )}
+
+              <button onClick={saveNovoLead} disabled={novoLeadSaving}
+                className="w-full rounded-xl bg-[#FF6B00] py-3 font-['Sora'] text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_16px_rgba(255,107,0,0.3)] transition-all hover:bg-[#e06000] disabled:opacity-60">
+                {novoLeadSaving ? "Cadastrando..." : "+ Cadastrar Lead"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

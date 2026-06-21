@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { AnimatedSection } from "@/components/ui/AnimatedSection"
+import { SimuladorEnergia } from "@/components/simulator/SimuladorEnergia"
 import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
+import Link from "next/link"
 
 const CONCESSIONARIAS = [
   "Enel SP","Enel RJ","Enel CE","Energisa","CPFL","Equatorial","Cemig",
@@ -17,22 +19,23 @@ const ESTADOS = [
   "SP","SE","TO",
 ]
 
-const VALORES = [
-  { label:"R$ 300 – R$ 2.000",   min:300,   max:2000  },
-  { label:"R$ 2.000 – R$ 5.000", min:2000,  max:5000  },
-  { label:"R$ 5.000 – R$ 10.000",min:5000,  max:10000 },
-  { label:"R$ 10.000 – R$ 20.000",min:10000,max:20000 },
-  { label:"Acima de R$ 20.000",  min:20000, max:50000 },
+const REDES_SOCIAIS = [
+  { nome:"Facebook",  icon:"f",  href:"https://facebook.com/creditogold"  },
+  { nome:"Instagram", icon:"ig", href:"https://instagram.com/creditogold" },
+  { nome:"LinkedIn",  icon:"in", href:"https://linkedin.com/company/creditogold" },
+  { nome:"YouTube",   icon:"yt", href:"https://youtube.com/@creditogold"  },
+  { nome:"TikTok",    icon:"tt", href:"https://tiktok.com/@creditogold"   },
+  { nome:"WhatsApp",  icon:"wa", href:"https://wa.me/5521999999999"       },
 ]
 
 export default function EnergiaPage() {
-  const [step, setStep]     = useState<1|2>(1)
+  const [step, setStep]       = useState<"simular"|"dados">("simular")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [refSlug, setRefSlug] = useState<string|null>(null)
+  const [simulacao, setSimulacao] = useState({ valor: 1500, parcelas: 12, parcelaMensal: 0 })
   const [form, setForm] = useState({
-    nome:"", cpf:"", telefone:"", whatsapp:"", email:"",
-    cidade:"", estado:"SP", valorFaixa:"R$ 5.000 – R$ 10.000",
+    nome:"", cpf:"", telefone:"", email:"", cidade:"", estado:"SP",
   })
   const [errors, setErrors] = useState<Record<string,string>>({})
 
@@ -51,6 +54,11 @@ export default function EnergiaPage() {
     return e
   }
 
+  function handleSolicitarSimulacao(dados: { valor: number; parcelas: number; parcelaMensal: number }) {
+    setSimulacao(dados)
+    setStep("dados")
+  }
+
   async function handleSubmit() {
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
@@ -66,9 +74,9 @@ export default function EnergiaPage() {
           cpf:       form.cpf,
           telefone:  form.telefone,
           produto:   "energia",
-          valor:     VALORES.find(v => v.label === form.valorFaixa)?.min ?? 5000,
-          parcelas:  12,
-          parcelaMensal: 0,
+          valor:     simulacao.valor,
+          parcelas:  simulacao.parcelas,
+          parcelaMensal: simulacao.parcelaMensal,
           cidade:    form.cidade,
           estado:    form.estado,
           origem:    refSlug ? "afiliado" : "organico",
@@ -139,7 +147,7 @@ export default function EnergiaPage() {
             </div>
           </div>
 
-          {/* Direita — Formulário */}
+          {/* Direita — Simulador / Formulário */}
           <div style={{ animation:"fadeUp 0.9s 0.2s ease both" }}>
             {success ? (
               <div className="rounded-3xl bg-white p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
@@ -150,23 +158,40 @@ export default function EnergiaPage() {
                   <div className="font-['Sora'] text-sm font-bold text-[#0f9c40]">✓ Solicitação realizada com sucesso</div>
                   <div className="mt-1 font-['Sora'] text-xs text-[#6b7280]">Você receberá uma confirmação no WhatsApp</div>
                 </div>
-                <button onClick={() => { setSuccess(false); setForm({ nome:"", cpf:"", telefone:"", whatsapp:"", email:"", cidade:"", estado:"SP", valorFaixa:"R$ 5.000 – R$ 10.000" }) }}
+                <button onClick={() => { setSuccess(false); setStep("simular"); setForm({ nome:"", cpf:"", telefone:"", email:"", cidade:"", estado:"SP" }) }}
                   className="mt-6 font-['Sora'] text-sm text-[#9ca3af] hover:text-[#1DB954]">
                   Fazer nova solicitação
                 </button>
               </div>
+            ) : step === "simular" ? (
+              <SimuladorEnergia onSolicitar={handleSolicitarSimulacao} />
             ) : (
               <div className="rounded-3xl bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
                 {/* Header do card */}
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <div className="font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#FF6B00]">Proposta Online</div>
-                    <h2 className="font-['Sora'] text-lg font-extrabold text-[#0D1B2A]">Empréstimo na Conta de Energia</h2>
+                    <h2 className="font-['Sora'] text-lg font-extrabold text-[#0D1B2A]">Seus dados de contato</h2>
                   </div>
-                  <div className="rounded-full bg-[#e8f8ee] px-3 py-1 font-['Sora'] text-[0.65rem] font-bold text-[#0f9c40]">SEM SPC/SERASA</div>
+                  <button onClick={() => setStep("simular")}
+                    className="rounded-full border-2 border-[#e5e7eb] px-3 py-1 font-['Sora'] text-[0.65rem] font-bold text-[#6b7280] hover:border-[#1DB954] hover:text-[#1DB954]">
+                    ← Voltar
+                  </button>
                 </div>
 
-                <div className="mb-5 mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#f4f6f8]">
+                {/* Resumo da simulação */}
+                <div className="mb-4 mt-3 flex items-center justify-between rounded-xl bg-[#f0fdf4] px-4 py-3">
+                  <div>
+                    <div className="font-['Sora'] text-[0.6rem] font-bold uppercase text-[#9ca3af]">Valor solicitado</div>
+                    <div className="font-['Sora'] text-base font-extrabold text-[#0D1B2A]">{formatCurrency(simulacao.valor)}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-['Sora'] text-[0.6rem] font-bold uppercase text-[#9ca3af]">{simulacao.parcelas}x de</div>
+                    <div className="font-['Sora'] text-base font-extrabold text-[#1DB954]">{formatCurrency(simulacao.parcelaMensal)}</div>
+                  </div>
+                </div>
+
+                <div className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-[#f4f6f8]">
                   <div className="h-full rounded-full bg-gradient-to-r from-[#1DB954] to-[#FF6B00] transition-all duration-500" style={{ width:"100%" }} />
                 </div>
 
@@ -213,24 +238,6 @@ export default function EnergiaPage() {
                         className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-sm outline-none transition-all focus:border-[#1DB954] focus:bg-white">
                         {ESTADOS.map(uf => <option key={uf}>{uf}</option>)}
                       </select>
-                    </div>
-                  </div>
-
-                  {/* Valor desejado */}
-                  <div>
-                    <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Valor Desejado</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {VALORES.map(v => (
-                        <button key={v.label} type="button"
-                          onClick={() => setForm(f => ({...f, valorFaixa: v.label}))}
-                          className={`rounded-xl border-2 px-4 py-2.5 text-left font-['Sora'] text-sm font-medium transition-all ${
-                            form.valorFaixa === v.label
-                              ? "border-[#1DB954] bg-[#e8f8ee] text-[#0f9c40] font-bold"
-                              : "border-[#e5e7eb] bg-[#f9fafb] text-[#374151] hover:border-[#1DB954]/40"
-                          }`}>
-                          {v.label}
-                        </button>
-                      ))}
                     </div>
                   </div>
 
@@ -337,13 +344,43 @@ export default function EnergiaPage() {
         </div>
       </section>
 
+      {/* ── REDES SOCIAIS ── */}
+      <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-14">
+        <AnimatedSection animation="fade-up" className="text-center">
+          <h2 className="font-['Sora'] text-3xl font-extrabold text-white">
+            Siga a <span className="text-[#FF6B00]">Crédito Gold</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-[440px] text-white/70">
+            Acompanhe nossas redes e fique por dentro das melhores oportunidades financeiras.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-6">
+            {REDES_SOCIAIS.map(rede => (
+              <a key={rede.nome} href={rede.href} target="_blank" rel="noopener noreferrer"
+                className="group flex flex-col items-center gap-2 no-underline">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl text-[#0a2e1a] shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:shadow-[0_8px_24px_rgba(29,185,84,0.4)]">
+                  {rede.icon === "f"  && "📘"}
+                  {rede.icon === "ig" && "📷"}
+                  {rede.icon === "in" && "💼"}
+                  {rede.icon === "yt" && "▶️"}
+                  {rede.icon === "tt" && "🎵"}
+                  {rede.icon === "wa" && "💬"}
+                </div>
+                <span className="font-['Sora'] text-sm font-medium text-white/80 transition-colors group-hover:text-[#1DB954]">
+                  {rede.nome}
+                </span>
+              </a>
+            ))}
+          </div>
+        </AnimatedSection>
+      </section>
+
       {/* Footer simples */}
       <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
         <p className="text-xs text-[#6b7280]">
           © 2026 Crédito Gold Soluções Financeiras ·{" "}
           <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" · "}
-          <a href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</a>
+          <Link href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</Link>
         </p>
       </footer>
     </div>

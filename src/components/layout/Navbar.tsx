@@ -50,7 +50,7 @@ export function Navbar({ onLoginClick }: NavbarProps) {
     const { getSession } = await import("next-auth/react")
     const session = await getSession()
     const role = (session?.user as any)?.role
-    window.location.href = role === "AFILIADO" ? "/painel-afiliado" : "/admin"
+    window.location.href = role === "AFILIADO" ? "/painel-afiliado" : role === "FINANCEIRO" ? "/financeiro" : "/admin"
   }
 
   async function handleCadastro(e: React.FormEvent) {

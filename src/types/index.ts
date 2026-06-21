@@ -1,5 +1,5 @@
 // ── Produtos de crédito ──────────────────────────────────────────
-export type ProdutoKey = "pessoal" | "garantia" | "empresarial" | "consignado" | "fgts"
+export type ProdutoKey = "pessoal" | "garantia" | "empresarial" | "consignado" | "fgts" | "energia"
 
 export interface Produto {
   key: ProdutoKey
