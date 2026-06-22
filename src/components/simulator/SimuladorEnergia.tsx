@@ -25,8 +25,8 @@ export function SimuladorEnergia({ onSolicitar }: SimuladorEnergiaProps) {
     }
   }, [valor, parcelas])
 
-  const pctValor  = ((valor - VALOR_MIN) / (VALOR_MAX - VALOR_MIN)) * 100
-  const pctPrazo  = ((parcelas - PRAZO_MIN) / (PRAZO_MAX - PRAZO_MIN)) * 100
+  const pctValor = ((valor - VALOR_MIN) / (VALOR_MAX - VALOR_MIN)) * 100
+  const pctPrazo = ((parcelas - PRAZO_MIN) / (PRAZO_MAX - PRAZO_MIN)) * 100
 
   return (
     <div className="rounded-[20px] bg-white p-7 shadow-[0_12px_48px_rgba(0,0,0,0.14)]">

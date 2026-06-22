@@ -4,14 +4,9 @@ import { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { AnimatedSection } from "@/components/ui/AnimatedSection"
 import { SimuladorEnergia } from "@/components/simulator/SimuladorEnergia"
+import { FacebookIcon, InstagramIcon, LinkedinIcon, YoutubeIcon, TiktokIcon, WhatsappIcon } from "@/components/ui/SocialIcons"
 import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
 import Link from "next/link"
-
-const CONCESSIONARIAS = [
-  "Enel SP","Enel RJ","Enel CE","Energisa","CPFL","Equatorial","Cemig",
-  "Coelba","Celpe","Cosern","Celg","Copel","RGE","CEEE","Elektro",
-  "Light","EDP","Neoenergia","Outra",
-]
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
@@ -20,12 +15,12 @@ const ESTADOS = [
 ]
 
 const REDES_SOCIAIS = [
-  { nome:"Facebook",  icon:"f",  href:"https://facebook.com/creditogold"  },
-  { nome:"Instagram", icon:"ig", href:"https://instagram.com/creditogold" },
-  { nome:"LinkedIn",  icon:"in", href:"https://linkedin.com/company/creditogold" },
-  { nome:"YouTube",   icon:"yt", href:"https://youtube.com/@creditogold"  },
-  { nome:"TikTok",    icon:"tt", href:"https://tiktok.com/@creditogold"   },
-  { nome:"WhatsApp",  icon:"wa", href:"https://wa.me/5521999999999"       },
+  { nome:"Facebook",  Icon:FacebookIcon,  href:"https://facebook.com/creditogold"  },
+  { nome:"Instagram", Icon:InstagramIcon, href:"https://instagram.com/creditogold" },
+  { nome:"LinkedIn",  Icon:LinkedinIcon,  href:"https://linkedin.com/company/creditogold" },
+  { nome:"YouTube",   Icon:YoutubeIcon,   href:"https://youtube.com/@creditogold"  },
+  { nome:"TikTok",    Icon:TiktokIcon,    href:"https://tiktok.com/@creditogold"   },
+  { nome:"WhatsApp",  Icon:WhatsappIcon,  href:"https://wa.me/5521999999999"       },
 ]
 
 export default function EnergiaPage() {
@@ -94,9 +89,7 @@ export default function EnergiaPage() {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen overflow-hidden pt-[70px]">
-        {/* Fundo gradiente escuro — estilo Crefaz */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0a2e1a] via-[#0f3d22] to-[#051a0e]" />
-        {/* Círculos decorativos */}
         <div className="absolute -right-32 -top-32 h-[500px] w-[500px] animate-[pulse_6s_ease-in-out_infinite] rounded-full bg-[#1DB954]/8" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 animate-[pulse_5s_ease-in-out_infinite_1s] rounded-full bg-[#FF6B00]/8" />
 
@@ -132,11 +125,10 @@ export default function EnergiaPage() {
               ))}
             </div>
 
-            {/* Stats */}
             <div className="mt-10 flex gap-6">
               {[
                 { value:"R$ 300", label:"Mínimo" },
-                { value:"R$ 20mil", label:"Máximo" },
+                { value:"R$ 4mil", label:"Máximo" },
                 { value:"3,49%", label:"Taxa a.m." },
               ].map(s => (
                 <div key={s.label}>
@@ -167,7 +159,6 @@ export default function EnergiaPage() {
               <SimuladorEnergia onSolicitar={handleSolicitarSimulacao} />
             ) : (
               <div className="rounded-3xl bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
-                {/* Header do card */}
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <div className="font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#FF6B00]">Proposta Online</div>
@@ -179,7 +170,6 @@ export default function EnergiaPage() {
                   </button>
                 </div>
 
-                {/* Resumo da simulação */}
                 <div className="mb-4 mt-3 flex items-center justify-between rounded-xl bg-[#f0fdf4] px-4 py-3">
                   <div>
                     <div className="font-['Sora'] text-[0.6rem] font-bold uppercase text-[#9ca3af]">Valor solicitado</div>
@@ -196,7 +186,6 @@ export default function EnergiaPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Nome */}
                   <div>
                     <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Nome Completo</label>
                     <input type="text" placeholder="Ex: João da Silva" value={form.nome}
@@ -205,7 +194,6 @@ export default function EnergiaPage() {
                     {errors.nome && <p className="mt-1 text-xs text-red-500">{errors.nome}</p>}
                   </div>
 
-                  {/* CPF */}
                   <div>
                     <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">CPF</label>
                     <input type="text" placeholder="000.000.000-00" value={form.cpf} maxLength={14}
@@ -214,7 +202,6 @@ export default function EnergiaPage() {
                     {errors.cpf && <p className="mt-1 text-xs text-red-500">{errors.cpf}</p>}
                   </div>
 
-                  {/* WhatsApp */}
                   <div>
                     <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">WhatsApp</label>
                     <input type="tel" placeholder="(00) 0 0000-0000" value={form.telefone} maxLength={16}
@@ -223,7 +210,6 @@ export default function EnergiaPage() {
                     {errors.telefone && <p className="mt-1 text-xs text-red-500">{errors.telefone}</p>}
                   </div>
 
-                  {/* Cidade + Estado */}
                   <div className="grid grid-cols-[1fr_100px] gap-3">
                     <div>
                       <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Cidade</label>
@@ -241,7 +227,6 @@ export default function EnergiaPage() {
                     </div>
                   </div>
 
-                  {/* Botão */}
                   <button onClick={handleSubmit} disabled={loading}
                     className="w-full rounded-xl bg-gradient-to-r from-[#1DB954] to-[#FF6B00] py-3.5 font-['Sora'] text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_20px_rgba(29,185,84,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(29,185,84,0.4)] disabled:opacity-60">
                     {loading ? "Enviando..." : "Solicitar Empréstimo →"}
@@ -270,7 +255,7 @@ export default function EnergiaPage() {
         </AnimatedSection>
         <div className="grid gap-6 md:grid-cols-4">
           {[
-            { n:"01", icon:"📝", color:"#1DB954", title:"Preencha o formulário", desc:"Informe apenas nome, CPF, WhatsApp e cidade. Leva menos de 2 minutos.", delay:0   },
+            { n:"01", icon:"📝", color:"#1DB954", title:"Preencha o formulário", desc:"Simule e informe nome, CPF, WhatsApp e cidade. Leva menos de 2 minutos.", delay:0   },
             { n:"02", icon:"📞", color:"#FF6B00", title:"Nossa equipe entra em contato", desc:"Um especialista entrará em contato pelo WhatsApp para orientar o processo.", delay:150 },
             { n:"03", icon:"📄", color:"#1DB954", title:"Dados da conta de luz", desc:"O correspondente coleta os dados da sua conta de energia durante o atendimento.", delay:300 },
             { n:"04", icon:"💰", color:"#FF6B00", title:"Crédito liberado", desc:"Aprovado, o valor é descontado diretamente na sua fatura de energia.", delay:450 },
@@ -320,13 +305,13 @@ export default function EnergiaPage() {
 
           <AnimatedSection animation="fade-right">
             <div className="rounded-2xl bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] p-8 text-white">
-              <div className="mb-6 font-['Sora'] text-lg font-bold">Simule seu limite</div>
+              <div className="mb-6 font-['Sora'] text-lg font-bold">Condições do Empréstimo</div>
               <div className="space-y-4">
                 {[
                   { label:"Valor mínimo",  value:"R$ 300,00"  },
-                  { label:"Valor máximo",  value:"R$ 20.000,00" },
+                  { label:"Valor máximo",  value:"R$ 4.000,00" },
                   { label:"Taxa a partir de", value:"3,49% a.m." },
-                  { label:"Prazo",         value:"6 a 36 meses" },
+                  { label:"Prazo",         value:"6 a 24 meses" },
                   { label:"Liberação",     value:"Após faturamento" },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between border-b border-white/10 pb-3 last:border-0 last:pb-0">
@@ -357,13 +342,8 @@ export default function EnergiaPage() {
             {REDES_SOCIAIS.map(rede => (
               <a key={rede.nome} href={rede.href} target="_blank" rel="noopener noreferrer"
                 className="group flex flex-col items-center gap-2 no-underline">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl text-[#0a2e1a] shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:shadow-[0_8px_24px_rgba(29,185,84,0.4)]">
-                  {rede.icon === "f"  && "📘"}
-                  {rede.icon === "ig" && "📷"}
-                  {rede.icon === "in" && "💼"}
-                  {rede.icon === "yt" && "▶️"}
-                  {rede.icon === "tt" && "🎵"}
-                  {rede.icon === "wa" && "💬"}
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a2e1a] shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#1DB954] group-hover:text-white group-hover:shadow-[0_8px_24px_rgba(29,185,84,0.4)]">
+                  <rede.Icon className="h-7 w-7" />
                 </div>
                 <span className="font-['Sora'] text-sm font-medium text-white/80 transition-colors group-hover:text-[#1DB954]">
                   {rede.nome}

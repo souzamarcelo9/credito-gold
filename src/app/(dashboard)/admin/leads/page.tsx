@@ -63,6 +63,31 @@ export default function AdminLeadsPage() {
   const [novoLeadMsg, setNovoLeadMsg]       = useState("")
   const LIMIT = 15
 
+  // Deep-link: abre o painel de detalhes automaticamente se vier ?id= na URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get("id")
+    if (!id) return
+
+    const found = leads.find(l => l.id === id)
+    if (found) {
+      setSelected(found)
+      window.history.replaceState({}, "", "/admin/leads")
+      return
+    }
+
+    // Se não está na página atual, busca direto pelo ID
+    fetch(`/api/leads/${id}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.data) {
+          setSelected(json.data)
+          window.history.replaceState({}, "", "/admin/leads")
+        }
+      })
+      .catch(() => {})
+  }, [leads])
+
   const fetchLeads = useCallback(async () => {
     setLoading(true)
     try {
@@ -504,6 +529,7 @@ export default function AdminLeadsPage() {
                   <select value={novoLead.produto} onChange={e => setNovoLead(f => ({...f, produto: e.target.value}))}
                     className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-sm outline-none focus:border-[#1DB954] focus:bg-white">
                     {Object.entries(PRODUTO_LABEL).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                    <option value="ENERGIA">Empréstimo na Conta de Luz</option>
                   </select>
                 </div>
                 <div>

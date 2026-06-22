@@ -249,7 +249,9 @@ export default function AdminPage() {
                     <td className="px-5 py-3 text-sm text-[#6b7280]">{lead.origem}</td>
                     <td className="px-5 py-3 text-sm text-[#6b7280]">{lead.afiliado?.nome ?? "Orgânico"}</td>
                     <td className="px-5 py-3">
-                      <button className="rounded-lg bg-[#e8f8ee] px-2.5 py-1 font-['Sora'] text-[0.65rem] font-bold text-[#0f9c40] hover:bg-[#1DB954] hover:text-white">
+                      <button
+                        onClick={() => window.location.href = `/admin/leads?id=${lead.id}`}
+                        className="rounded-lg bg-[#e8f8ee] px-2.5 py-1 font-['Sora'] text-[0.65rem] font-bold text-[#0f9c40] hover:bg-[#1DB954] hover:text-white transition-colors">
                         Ver
                       </button>
                     </td>

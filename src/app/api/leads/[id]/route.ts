@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { ApiResponse, LeadStatus } from "@/types"
 import { ok, err } from "@/lib/api-helpers"
+import { maskCpf } from "@/lib/crypto"
 
 const VALID: LeadStatus[] = ["novo","em_analise","proposta_enviada","contrato_assinado","aprovado","recusado"]
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const prisma  = (await import("@/lib/prisma")).default
+    if (!prisma) return err("Banco não disponível", 503)
+
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: {
+        afiliado:     { select: { slug: true, nome: true } },
+        dadosEnergia: true,
+      },
+    })
+
+    if (!lead) return err("Lead não encontrado", 404)
+
+    return ok({ ...lead, cpf: maskCpf("") })
+  } catch (e) {
+    console.error("[leads/[id] GET]", e)
+    return err("Erro ao buscar lead", 500)
+  }
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

@@ -49,9 +49,8 @@ export async function GET(req: NextRequest) {
     return ok({ data: safe, total, page, totalPages: Math.ceil(total / limit) })
   } catch {
     let data = MOCK_LEADS
-    if (status)  data = data.filter(l => l.status === status.toUpperCase())
-    if (produto) data = data.filter(l => l.produto === produto.toUpperCase())
-    if (search)  data = data.filter(l => l.nome.toLowerCase().includes(search.toLowerCase()))
+    if (status) data = data.filter(l => l.status === status.toUpperCase())
+    if (search) data = data.filter(l => l.nome.toLowerCase().includes(search.toLowerCase()))
     return ok({ data, total: data.length, page: 1, totalPages: 1 })
   }
 }
