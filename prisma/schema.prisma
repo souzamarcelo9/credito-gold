@@ -101,7 +101,8 @@ model Lead {
   afiliado    Afiliado?    @relation(fields: [afiliadoId], references: [id])
   comissao    Comissao?
   documentos  Documento[]
-  dadosEnergia LeadEnergia?
+  dadosEnergia     LeadEnergia?
+  correspondente   LeadCorrespondente?
 
   @@index([cpfHash])
   @@index([status])
@@ -246,4 +247,35 @@ model Config {
   updatedAt DateTime @updatedAt
 
   @@map("configs")
+}
+
+// ─────────────────────────────────────────────
+// CORRESPONDENTES (distribuição de leads)
+// ─────────────────────────────────────────────
+model Correspondente {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  telefone  String
+  ativo     Boolean  @default(true)
+  totalLeads Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads LeadCorrespondente[]
+
+  @@map("correspondentes")
+}
+
+model LeadCorrespondente {
+  id               String   @id @default(cuid())
+  distribuidoEm    DateTime @default(now())
+
+  leadId           String   @unique
+  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  correspondenteId String
+  correspondente   Correspondente @relation(fields: [correspondenteId], references: [id])
+
+  @@index([correspondenteId])
+  @@map("lead_correspondentes")
 }
