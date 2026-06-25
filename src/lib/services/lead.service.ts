@@ -28,16 +28,14 @@ export async function createLead(data: CreateLeadDTO, ipAddress: string) {
   const lead = await prisma.lead.create({
     data: {
       nome:          data.nome,
-      email:         data.email ?? "",
+      email:         data.email,
       cpf:           cpfEncrypted,
       cpfHash,
       telefone:      data.telefone,
       produto:       data.produto.toUpperCase() as any,
       valor:         data.valor,
-      parcelas:      data.parcelas      ?? 0,
-      parcelaMensal: data.parcelaMensal ?? 0,
-      cidade:        (data as any).cidade ?? null,
-      estado:        (data as any).estado ?? null,
+      parcelas:      data.parcelas,
+      parcelaMensal: data.parcelaMensal,
       origem:        (data.origem ?? "organico").toUpperCase() as any,
       afiliadoId:    data.afiliadoId,
     },
@@ -78,11 +76,23 @@ export async function updateLeadStatus(
   const lead = await prisma.lead.update({
     where: { id },
     data:  { status: status.toUpperCase() as any },
+    include: {
+      banco: { include: { produtos: true } },
+    },
   })
 
   // Se aprovado, gera comissão para o afiliado
   if (status === "aprovado" && lead.afiliadoId) {
-    const valorComissao = COMISSOES[lead.produto.toLowerCase()] ?? 100
+    let valorComissao = COMISSOES[lead.produto.toLowerCase()] ?? 100
+
+    // Se tem banco vinculado com config do produto, usa o cálculo proporcional
+    const produtoBanco = (lead as any).banco?.produtos?.find(
+      (p: any) => p.produto === lead.produto && p.ativo
+    )
+    if (produtoBanco) {
+      const comissaoCG  = (lead.valor * produtoBanco.comissaoCG) / 100
+      valorComissao     = (comissaoCG * produtoBanco.percentualAfiliado) / 100
+    }
 
     await prisma.comissao.upsert({
       where:  { leadId: id },
@@ -92,7 +102,7 @@ export async function updateLeadStatus(
         valor:      valorComissao,
         status:     "PENDENTE",
       },
-      update: {},
+      update: { valor: valorComissao },
     })
 
     await prisma.afiliado.update({

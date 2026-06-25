@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
 import { ok, err } from "@/lib/api-helpers"
-import { maskCpf } from "@/lib/crypto"
+import { maskCpf, decrypt } from "@/lib/crypto"
 
 const MOCK_LEADS = [
   { id:"1", nome:"Marcos Alves",   email:"marcos@email.com",   telefone:"(21) 98821-3344", produto:"PESSOAL",    valor:8000,  parcelas:24, parcelaMensal:465, status:"NOVO",             origem:"AFILIADO",  afiliado:{slug:"joao123",nome:"João Silva"}, createdAt: new Date().toISOString() },
@@ -45,7 +45,11 @@ export async function GET(req: NextRequest) {
       prisma.lead.count({ where }),
     ])
 
-    const safe = (leads as any[]).map(l => ({ ...l, cpf: maskCpf("") }))
+    const safe = (leads as any[]).map(l => {
+      let cpfMasked = "***.***.***-**"
+      try { cpfMasked = maskCpf(decrypt(l.cpf)) } catch {}
+      return { ...l, cpf: cpfMasked }
+    })
     return ok({ data: safe, total, page, totalPages: Math.ceil(total / limit) })
   } catch {
     let data = MOCK_LEADS

@@ -40,6 +40,109 @@ const ORIGEM_STYLE: Record<string, string> = {
   DIRETO:  "bg-[#fff3e8] text-[#c2410c]",
 }
 
+// Componente inline para vincular banco ao lead
+function BancoSelector({ leadId, produto }: { leadId: string; produto: string }) {
+  const [bancos, setBancos]       = useState<any[]>([])
+  const [bancoId, setBancoId]     = useState("")
+  const [salvando, setSalvando]   = useState(false)
+  const [comissao, setComissao]   = useState<any>(null)
+  const [msg, setMsg]             = useState("")
+
+  useEffect(() => {
+    fetch("/api/admin/bancos").then(r => r.json()).then(j => {
+      if (j.success) setBancos(j.data.filter((b: any) => b.ativo))
+    })
+    fetch(`/api/leads/${leadId}/banco`).then(r => r.json()).then(j => {
+      if (j.success && j.data) setBancoId(j.data.id)
+    })
+  }, [leadId])
+
+  async function vincular() {
+    if (!bancoId) return
+    setSalvando(true); setMsg(""); setComissao(null)
+    const res  = await fetch(`/api/leads/${leadId}/banco`, {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ bancoId }),
+    })
+    const json = await res.json()
+    setSalvando(false)
+    if (json.success) {
+      setMsg("✅ Banco vinculado!")
+      if (json.data?.comissoes) setComissao(json.data.comissoes)
+    } else {
+      setMsg("❌ " + json.message)
+    }
+  }
+
+  const bancoSelecionado = bancos.find(b => b.id === bancoId)
+  const produtoBanco     = bancoSelecionado?.produtos?.find(
+    (p: any) => p.produto === produto && p.ativo
+  )
+
+  return (
+    <div className="mt-4 rounded-xl border border-[#e5e7eb] p-3">
+      <div className="mb-2 font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
+        🏦 Banco / Promotora (opcional)
+      </div>
+      <div className="flex gap-2">
+        <select value={bancoId} onChange={e => { setBancoId(e.target.value); setComissao(null); setMsg("") }}
+          className="flex-1 rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 text-sm outline-none focus:border-[#1DB954] focus:bg-white">
+          <option value="">Selecionar banco...</option>
+          {bancos.map(b => <option key={b.id} value={b.id}>{b.nome}</option>)}
+        </select>
+        <button onClick={vincular} disabled={!bancoId || salvando}
+          className="rounded-xl bg-[#1DB954] px-3 py-2 font-['Sora'] text-xs font-bold text-white hover:bg-[#0f9c40] disabled:opacity-50">
+          {salvando ? "..." : "Vincular"}
+        </button>
+      </div>
+
+      {/* Preview comissão */}
+      {produtoBanco && !comissao && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5 text-[0.6rem]">
+          <div className="rounded-lg bg-[#f4f6f8] px-2 py-1.5 text-center">
+            <div className="font-bold text-[#9ca3af]">CG</div>
+            <div className="font-bold text-[#0D1B2A]">{produtoBanco.comissaoCG}%</div>
+          </div>
+          <div className="rounded-lg bg-[#fff3e8] px-2 py-1.5 text-center">
+            <div className="font-bold text-[#9ca3af]">Afiliado</div>
+            <div className="font-bold text-[#FF6B00]">{produtoBanco.percentualAfiliado}%</div>
+          </div>
+          <div className="rounded-lg bg-[#ede9fe] px-2 py-1.5 text-center">
+            <div className="font-bold text-[#9ca3af]">Corresp.</div>
+            <div className="font-bold text-[#6d28d9]">{produtoBanco.percentualCorrespondente}%</div>
+          </div>
+        </div>
+      )}
+
+      {/* Resultado do cálculo após aprovação */}
+      {comissao && (
+        <div className="mt-2 rounded-xl bg-[#e8f8ee] p-2.5">
+          <div className="mb-1.5 font-['Sora'] text-[0.6rem] font-bold text-[#0f9c40]">✅ Comissões calculadas</div>
+          <div className="grid grid-cols-3 gap-1.5 text-[0.6rem]">
+            <div className="text-center">
+              <div className="text-[#9ca3af]">Afiliado</div>
+              <div className="font-bold text-[#FF6B00]">{formatCurrency(comissao.afiliado.valor)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[#9ca3af]">Correspondente</div>
+              <div className="font-bold text-[#6d28d9]">{formatCurrency(comissao.correspondente.valor)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-[#9ca3af]">CG fica</div>
+              <div className="font-bold text-[#1DB954]">{formatCurrency(comissao.creditoGold.valor)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {msg && !comissao && (
+        <p className={`mt-1.5 font-['Sora'] text-xs font-bold ${msg.startsWith("✅") ? "text-[#0f9c40]" : "text-red-500"}`}>{msg}</p>
+      )}
+    </div>
+  )
+}
+
 export default function AdminLeadsPage() {
   const { data: session } = useSession()
   const userEmail = (session?.user as any)?.email ?? ""
@@ -277,7 +380,7 @@ export default function AdminLeadsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-[#f4f6f8]">
-                    {["Lead","Produto","Valor","Status","Origem","Afiliado","Data","Ações"].map(h => (
+                    {["Lead","CPF","Produto","Valor","Status","Origem","Afiliado","Data","Ações"].map(h => (
                       <th key={h} className="px-4 py-3 text-left font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">{h}</th>
                     ))}
                   </tr>
@@ -300,6 +403,11 @@ export default function AdminLeadsPage() {
                       <td className="px-4 py-3">
                         <div className="font-['Sora'] text-sm font-semibold text-[#0D1B2A]">{lead.nome}</div>
                         <div className="font-['Sora'] text-[0.65rem] text-[#9ca3af]">{lead.telefone}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-lg bg-[#f4f6f8] px-2 py-1 font-['Sora'] text-[0.65rem] font-mono font-bold text-[#374151]">
+                          {(lead as any).cpf ?? "***.***.***-**"}
+                        </span>
                       </td>
                       <td className="px-4 py-3 font-['Sora'] text-xs text-[#6b7280]">{PRODUTO_LABEL[lead.produto] ?? lead.produto}</td>
                       <td className="px-4 py-3 font-['Sora'] text-sm font-bold text-[#0D1B2A]">{formatCurrency(lead.valor)}</td>
@@ -464,6 +572,9 @@ export default function AdminLeadsPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Banco/Promotora (opcional) */}
+                <BancoSelector leadId={selected.id} produto={selected.produto} />
 
                 {/* Ações rápidas */}
                 <div className="mt-4 space-y-2">

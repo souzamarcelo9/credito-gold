@@ -103,6 +103,8 @@ model Lead {
   documentos  Documento[]
   dadosEnergia     LeadEnergia?
   correspondente   LeadCorrespondente?
+  bancoId          String?
+  banco            BancoPromotora? @relation("LeadBanco", fields: [bancoId], references: [id])
 
   @@index([cpfHash])
   @@index([status])
@@ -278,4 +280,42 @@ model LeadCorrespondente {
 
   @@index([correspondenteId])
   @@map("lead_correspondentes")
+}
+
+// ─────────────────────────────────────────────
+// BANCOS E PROMOTORAS
+// ─────────────────────────────────────────────
+model BancoPromotora {
+  id     String              @id @default(cuid())
+  nome   String
+  tipo   TipoBanco           @default(BANCO)
+  ativo  Boolean             @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  produtos ProdutoBanco[]
+  leads    Lead[]            @relation("LeadBanco")
+
+  @@map("bancos_promotoras")
+}
+
+enum TipoBanco {
+  BANCO
+  PROMOTORA
+}
+
+model ProdutoBanco {
+  id                  String   @id @default(cuid())
+  produto             Produto
+  comissaoCG          Float    // % que a Crédito Gold recebe do banco
+  percentualAfiliado  Float    // % da comissão CG repassada ao afiliado
+  percentualCorrespondente Float // % da comissão CG repassada ao correspondente
+  ativo               Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
+
+  bancoId String
+  banco   BancoPromotora @relation(fields: [bancoId], references: [id], onDelete: Cascade)
+
+  @@unique([bancoId, produto])
+  @@map("produtos_banco")
 }
