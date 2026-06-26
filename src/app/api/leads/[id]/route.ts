@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { ApiResponse, LeadStatus } from "@/types"
 import { ok, err } from "@/lib/api-helpers"
-import { maskCpf } from "@/lib/crypto"
+import { maskCpf, decrypt } from "@/lib/crypto"
 
 const VALID: LeadStatus[] = ["novo","em_analise","proposta_enviada","contrato_assinado","aprovado","recusado"]
 
@@ -21,7 +21,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (!lead) return err("Lead não encontrado", 404)
 
-    return ok({ ...lead, cpf: maskCpf("") })
+    let cpfDecrypted = "Não disponível"
+    try { cpfDecrypted = decrypt(lead.cpf) } catch {}
+    return ok({ ...lead, cpf: cpfDecrypted })
   } catch (e) {
     console.error("[leads/[id] GET]", e)
     return err("Erro ao buscar lead", 500)

@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { AnimatedSection } from "@/components/ui/AnimatedSection"
 import { SimuladorEnergia } from "@/components/simulator/SimuladorEnergia"
-import { FacebookIcon, InstagramIcon, LinkedinIcon, YoutubeIcon, TiktokIcon, WhatsappIcon } from "@/components/ui/SocialIcons"
+import { SocialBar } from "@/components/ui/SocialBar"
 import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
-import Link from "next/link"
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
@@ -14,14 +13,6 @@ const ESTADOS = [
   "SP","SE","TO",
 ]
 
-const REDES_SOCIAIS = [
-  { nome:"Facebook",  Icon:FacebookIcon,  href:"https://facebook.com/creditogold"  },
-  { nome:"Instagram", Icon:InstagramIcon, href:"https://instagram.com/creditogold" },
-  { nome:"LinkedIn",  Icon:LinkedinIcon,  href:"https://linkedin.com/company/creditogold" },
-  { nome:"YouTube",   Icon:YoutubeIcon,   href:"https://youtube.com/@creditogold"  },
-  { nome:"TikTok",    Icon:TiktokIcon,    href:"https://tiktok.com/@creditogold"   },
-  { nome:"WhatsApp",  Icon:WhatsappIcon,  href:"https://wa.me/5521999999999"       },
-]
 
 export default function EnergiaPage() {
   const [step, setStep]       = useState<"simular"|"dados">("simular")
@@ -329,29 +320,15 @@ export default function EnergiaPage() {
         </div>
       </section>
 
-      {/* ── REDES SOCIAIS ── */}
-      <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-14">
-        <AnimatedSection animation="fade-up" className="text-center">
-          <h2 className="font-['Sora'] text-3xl font-extrabold text-white">
-            Siga a <span className="text-[#FF6B00]">Crédito Gold</span>
-          </h2>
-          <p className="mx-auto mt-2 max-w-[440px] text-white/70">
-            Acompanhe nossas redes e fique por dentro das melhores oportunidades financeiras.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-6">
-            {REDES_SOCIAIS.map(rede => (
-              <a key={rede.nome} href={rede.href} target="_blank" rel="noopener noreferrer"
-                className="group flex flex-col items-center gap-2 no-underline">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a2e1a] shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#1DB954] group-hover:text-white group-hover:shadow-[0_8px_24px_rgba(29,185,84,0.4)]">
-                  <rede.Icon className="h-7 w-7" />
-                </div>
-                <span className="font-['Sora'] text-sm font-medium text-white/80 transition-colors group-hover:text-[#1DB954]">
-                  {rede.nome}
-                </span>
-              </a>
-            ))}
+      {/* ── REDES SOCIAIS — compacto ── */}
+      <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
+            <p className="font-['Sora'] text-sm text-white/60">Acompanhe nossas redes e fique por dentro das melhores oportunidades.</p>
           </div>
-        </AnimatedSection>
+          <SocialBar label="" dark={true} size="sm" />
+        </div>
       </section>
 
       {/* Footer simples */}
@@ -360,7 +337,7 @@ export default function EnergiaPage() {
           © 2026 Crédito Gold Soluções Financeiras ·{" "}
           <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" · "}
-          <Link href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</Link>
+          <a href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</a>
         </p>
       </footer>
     </div>

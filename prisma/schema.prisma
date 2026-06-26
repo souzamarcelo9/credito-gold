@@ -319,3 +319,29 @@ model ProdutoBanco {
   @@unique([bancoId, produto])
   @@map("produtos_banco")
 }
+
+// ─────────────────────────────────────────────
+// DESPESAS OPERACIONAIS
+// ─────────────────────────────────────────────
+model Despesa {
+  id         String          @id @default(cuid())
+  descricao  String
+  categoria  CategoriaDespesa @default(OPERACIONAL)
+  valor      Float
+  data       DateTime        @default(now())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([data])
+  @@map("despesas")
+}
+
+enum CategoriaDespesa {
+  OPERACIONAL
+  PESSOAL
+  MARKETING
+  TECNOLOGIA
+  JURIDICO
+  IMPOSTOS
+  OUTROS
+}

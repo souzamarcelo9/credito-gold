@@ -7,6 +7,7 @@ import { LeadModal }         from "@/components/leads/LeadModal"
 import { AnimatedSection }   from "@/components/ui/AnimatedSection"
 import { StatsCounter }      from "@/components/ui/StatsCounter"
 import { FloatingParticles } from "@/components/ui/FloatingParticles"
+import { SocialBar }         from "@/components/ui/SocialBar"
 import type { ProdutoKey }   from "@/types"
 
 interface SimulacaoSolicitada {
@@ -363,10 +364,13 @@ export default function Home() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6">
           <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold. CNPJ 00.000.000/0001-00. Todos os direitos reservados.</p>
-          <div className="flex gap-2">
-            {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
-              <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
-            ))}
+          <div className="flex flex-wrap items-center gap-4">
+            <SocialBar label="" dark={true} size="sm" />
+            <div className="flex gap-2">
+              {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
+                <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
+              ))}
+            </div>
           </div>
         </div>
       </footer>

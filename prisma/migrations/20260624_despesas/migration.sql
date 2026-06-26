@@ -1,0 +1,18 @@
+DO $$ BEGIN
+  CREATE TYPE "CategoriaDespesa" AS ENUM (
+    'OPERACIONAL','PESSOAL','MARKETING','TECNOLOGIA','JURIDICO','IMPOSTOS','OUTROS'
+  );
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "despesas" (
+  "id"        TEXT NOT NULL,
+  "descricao" TEXT NOT NULL,
+  "categoria" "CategoriaDespesa" NOT NULL DEFAULT 'OPERACIONAL',
+  "valor"     DOUBLE PRECISION NOT NULL,
+  "data"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "despesas_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "despesas_data_idx" ON "despesas"("data");

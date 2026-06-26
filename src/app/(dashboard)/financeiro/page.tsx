@@ -45,14 +45,9 @@ export default function FinanceiroPage() {
         {/* Header escuro */}
         <div className="bg-[#0D1B2A] px-8 py-6">
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B00]">
-                <span className="font-['Sora'] text-sm font-extrabold text-white">CG</span>
-              </div>
-              <div>
-                <div className="font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#475569]">Desempenho Financeiro</div>
-                <div className="font-['Sora'] text-sm font-bold text-white">Crédito <span className="text-[#1DB954]">Gold</span></div>
-              </div>
+            <div>
+              <div className="font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#475569]">Desempenho Financeiro</div>
+              <div className="font-['Sora'] text-lg font-extrabold text-white">Dashboard <span className="text-[#1DB954]">Financeiro</span></div>
             </div>
             <div className="font-['Sora'] text-xs text-[#475569]">
               Período: <span className="font-bold text-white">{range.label}</span>

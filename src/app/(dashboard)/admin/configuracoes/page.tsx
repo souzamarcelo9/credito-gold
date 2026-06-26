@@ -19,7 +19,7 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [msg, setMsg]           = useState("")
-  const [activeTab, setActiveTab] = useState<"juros"|"comissoes"|"limites">("juros")
+  const [activeTab, setActiveTab] = useState<"juros"|"limites">("juros")
 
   useEffect(() => {
     fetch("/api/admin/configs")
@@ -69,9 +69,8 @@ export default function ConfiguracoesPage() {
   )
 
   const TABS = [
-    { key:"juros",      label:"⚡ Taxas de Juros"    },
-    { key:"comissoes",  label:"💸 Comissões"         },
-    { key:"limites",    label:"📊 Limites e Prazos"  },
+    { key:"juros",   label:"⚡ Taxas de Juros"   },
+    { key:"limites", label:"📊 Limites e Prazos"  },
   ]
 
   return (
@@ -135,12 +134,6 @@ export default function ConfiguracoesPage() {
                   {activeTab === "juros" && field(
                     "Taxa de juros (% a.m.)",
                     `TAXA_${p.key}`, "% a.m."
-                  )}
-
-                  {/* Comissões */}
-                  {activeTab === "comissoes" && field(
-                    "Comissão por aprovação (R$)",
-                    `COMISSAO_${p.key}`, "R$"
                   )}
 
                   {/* Limites e Prazos */}

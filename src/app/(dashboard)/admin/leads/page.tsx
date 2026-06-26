@@ -492,6 +492,7 @@ export default function AdminLeadsPage() {
                 {/* Dados */}
                 <div className="space-y-3">
                   {[
+                    { label:"CPF",       value:(selected as any).cpf ?? "—",    mono: true },
                     { label:"Telefone",  value:selected.telefone },
                     { label:"Produto",   value:PRODUTO_LABEL[selected.produto] ?? selected.produto },
                     { label:"Valor",     value:formatCurrency(selected.valor) },
@@ -502,7 +503,9 @@ export default function AdminLeadsPage() {
                   ].map(item => (
                     <div key={item.label} className="flex justify-between rounded-xl bg-[#f9fafb] px-3 py-2.5">
                       <span className="font-['Sora'] text-xs font-bold text-[#9ca3af]">{item.label}</span>
-                      <span className="font-['Sora'] text-xs font-medium text-[#0D1B2A]">{item.value}</span>
+                      <span className={`text-xs font-medium text-[#0D1B2A] ${(item as any).mono ? "font-mono tracking-wider bg-[#f4f6f8] rounded px-1.5 py-0.5" : "font-['Sora']"}`}>
+                        {item.value}
+                      </span>
                     </div>
                   ))}
                 </div>
