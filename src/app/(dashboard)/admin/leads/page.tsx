@@ -406,7 +406,7 @@ export default function AdminLeadsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="rounded-lg bg-[#f4f6f8] px-2 py-1 font-['Sora'] text-[0.65rem] font-mono font-bold text-[#374151]">
-                          {(lead as any).cpf ?? "***.***.***-**"}
+                          {(lead as any).cpf ?? "***.***.***-**"}                          
                         </span>
                       </td>
                       <td className="px-4 py-3 font-['Sora'] text-xs text-[#6b7280]">{PRODUTO_LABEL[lead.produto] ?? lead.produto}</td>
@@ -492,7 +492,8 @@ export default function AdminLeadsPage() {
                 {/* Dados */}
                 <div className="space-y-3">
                   {[
-                    { label:"CPF",       value:(selected as any).cpf ?? "—",    mono: true },
+                    //{ label:"CPF",       value:(selected as any).cpf ?? "—",    mono: true },
+                    { label:"CPF",       value:(selected as any).cpf },
                     { label:"Telefone",  value:selected.telefone },
                     { label:"Produto",   value:PRODUTO_LABEL[selected.produto] ?? selected.produto },
                     { label:"Valor",     value:formatCurrency(selected.valor) },
