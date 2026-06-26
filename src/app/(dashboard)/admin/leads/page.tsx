@@ -165,6 +165,7 @@ export default function AdminLeadsPage() {
   const [novoLeadSaving, setNovoLeadSaving] = useState(false)
   const [novoLeadMsg, setNovoLeadMsg]       = useState("")
   const LIMIT = 15
+  const [selectedCpf, setSelectedCpf] = useState<string>("—")
 
   // Deep-link: abre o painel de detalhes automaticamente se vier ?id= na URL
   useEffect(() => {
@@ -207,8 +208,7 @@ export default function AdminLeadsPage() {
       }
     } finally { setLoading(false) }
   }, [page, search, statusFilter])
-
-  useEffect(() => { fetchLeads() }, [fetchLeads])
+useEffect(() => { fetchLeads() }, [fetchLeads])
 
   // Debounce search
   useEffect(() => {
@@ -216,6 +216,18 @@ export default function AdminLeadsPage() {
     return () => clearTimeout(t)
   }, [search])
 
+useEffect(() => {
+  if (!selected) return  
+  fetch(`/api/leads/${selected.id}`)
+    .then(r => r.json())
+    .then(json => {
+      if (json.success && json.data?.cpf) setSelectedCpf(json.data.cpf)
+      else setSelectedCpf("—")
+    })
+    .catch(() => setSelectedCpf("—"))
+}, [selected?.id])  // ← depende só do id, não do objeto inteiro
+
+  
   async function saveNovoLead() {
     if (novoLead.nome.trim().length < 3) { setNovoLeadMsg("❌ Nome obrigatório"); return }
     if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(novoLead.cpf)) { setNovoLeadMsg("❌ CPF inválido (000.000.000-00)"); return }
@@ -492,8 +504,8 @@ export default function AdminLeadsPage() {
                 {/* Dados */}
                 <div className="space-y-3">
                   {[
-                    //{ label:"CPF",       value:(selected as any).cpf ?? "—",    mono: true },
-                    { label:"CPF",       value:(selected as any).cpf },
+                    { label:"CPF", value: selectedCpf, mono: true },
+                    //{ label:"CPF",       value:(selected as any).cpf ?? "—",    mono: true },                    
                     { label:"Telefone",  value:selected.telefone },
                     { label:"Produto",   value:PRODUTO_LABEL[selected.produto] ?? selected.produto },
                     { label:"Valor",     value:formatCurrency(selected.valor) },
