@@ -345,3 +345,43 @@ enum CategoriaDespesa {
   IMPOSTOS
   OUTROS
 }
+
+// ─────────────────────────────────────────────
+// CONTROLE DE DOCUMENTOS
+// ─────────────────────────────────────────────
+model DocumentoInterno {
+  id           String              @id @default(cuid())
+  titulo       String
+  categoria    CategoriaDocumento  @default(EMPRESA)
+  descricao    String?
+  arquivoUrl   String?             // URL do arquivo no Storage
+  arquivoNome  String?
+  responsavel  String?
+  dataEmissao  DateTime?
+  dataVencimento DateTime?
+  status       StatusDocumento     @default(VALIDO)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([status])
+  @@index([dataVencimento])
+  @@index([categoria])
+  @@map("documentos_internos")
+}
+
+enum CategoriaDocumento {
+  EMPRESA
+  CORRESPONDENTE
+  AFILIADO
+  BANCO_PARCEIRO
+  JURIDICO
+  CONTABIL
+  OUTROS
+}
+
+enum StatusDocumento {
+  VALIDO
+  VENCENDO    // vence em até 30 dias
+  VENCIDO
+  ARQUIVADO
+}

@@ -36,6 +36,7 @@ const ADMIN_SECTIONS: SidebarSection[] = [
       { icon: "🏦", label: "Bancos",         href: "/admin/bancos"       },
       { icon: "🔗", label: "Afiliados",      href: "/admin/afiliados"    },
       { icon: "🎯", label: "Distribuição",   href: "/admin/distribuicao" },
+      { icon: "📋", label: "Documentos",    href: "/admin/documentos"   },
       { icon: "💸", label: "Despesas",       href: "/admin/despesas"     },
       { icon: "⚙️", label: "Configurações",  href: "/admin/configuracoes"},
       { icon: "📋", label: "Propostas",    href: "/admin/propostas" },

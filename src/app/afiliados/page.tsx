@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { useApi } from "@/hooks/useApi"
-import { formatCPF, formatPhone } from "@/lib/utils"
+import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
 
 export default function AfiliadosPage() {
   const [form, setForm]       = useState({ nome: "", cpf: "", telefone: "", email: "", codigoIndicacao: "", senha: "", confirmarSenha: "" })
@@ -13,6 +13,30 @@ export default function AfiliadosPage() {
   const [success, setSuccess] = useState(false)
   const [showSenha, setShowSenha]           = useState(false)
   const [showConfirmar, setShowConfirmar]   = useState(false)
+
+  // Comissões dinâmicas do banco
+  const [comissoes, setComissoes] = useState<Record<string,number>>({
+    GARANTIA: 350, EMPRESARIAL: 250, CONSIGNADO: 120, PESSOAL: 100, FGTS: 80, ENERGIA: 60,
+  })
+
+  useEffect(() => {
+    fetch("/api/admin/configs")
+      .then(r => r.json())
+      .then(json => {
+        if (json.success && json.data) {
+          const d = json.data
+          setComissoes({
+            GARANTIA:    parseFloat(d.COMISSAO_GARANTIA)    || 350,
+            EMPRESARIAL: parseFloat(d.COMISSAO_EMPRESARIAL) || 250,
+            CONSIGNADO:  parseFloat(d.COMISSAO_CONSIGNADO)  || 120,
+            PESSOAL:     parseFloat(d.COMISSAO_PESSOAL)     || 100,
+            FGTS:        parseFloat(d.COMISSAO_FGTS)        || 80,
+            ENERGIA:     parseFloat(d.COMISSAO_ENERGIA)     || 60,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
   const { post, loading }     = useApi()
 
   function validate() {
@@ -311,24 +335,32 @@ export default function AfiliadosPage() {
               </thead>
               <tbody>
                 {[
-                  { produto:"Com Garantia de Imóvel", comissao:"R$ 350,00", top:true  },
-                  { produto:"Crédito Empresarial",    comissao:"R$ 250,00", top:false },
-                  { produto:"Consignado",              comissao:"R$ 120,00", top:false },
-                  { produto:"Crédito Pessoal",         comissao:"R$ 100,00", top:false },
-                  { produto:"Antecipação FGTS",        comissao:"R$ 80,00",  top:false },
-                ].map((row, i) => (
+                  { key:"GARANTIA",    produto:"Com Garantia de Imóvel",  top:true  },
+                  { key:"EMPRESARIAL", produto:"Crédito Empresarial",      top:false },
+                  { key:"CONSIGNADO",  produto:"Consignado",               top:false },
+                  { key:"PESSOAL",     produto:"Crédito Pessoal",          top:false },
+                  { key:"FGTS",        produto:"Antecipação FGTS",         top:false },
+                  { key:"ENERGIA",     produto:"Empréstimo Conta de Luz",  top:false },
+                ]
+                  .sort((a, b) => (comissoes[b.key] ?? 0) - (comissoes[a.key] ?? 0))
+                  .map((row, i) => (
                   <tr key={row.produto} className={`border-t border-[#e5e7eb] ${row.top ? "bg-[#e8f8ee]" : i%2===0 ? "bg-white" : "bg-[#f9fafb]"}`}>
                     <td className="px-6 py-4 font-medium text-[#0D1B2A]">
-                      {row.top && <span className="mr-2 rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.6rem] font-bold text-white">TOP</span>}
+                      {i === 0 && <span className="mr-2 rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.6rem] font-bold text-white">TOP</span>}
                       {row.produto}
                     </td>
-                    <td className="px-6 py-4 font-['Sora'] font-bold text-[#1DB954]">{row.comissao}</td>
-                    <td className="px-6 py-4 text-sm text-[#6b7280]">7 dias úteis</td>
+                    <td className="px-6 py-4 font-['Sora'] font-bold text-[#1DB954]">
+                      {formatCurrency(comissoes[row.key] ?? 0)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-[#6b7280]">30 dias após aprovação</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="mt-3 text-center font-['Sora'] text-xs text-[#9ca3af]">
+            * Comissões sujeitas a alteração. Valores pagos via PIX após confirmação do crédito.
+          </p>
         </div>
       </section>
 
