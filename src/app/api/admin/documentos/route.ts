@@ -1,12 +1,10 @@
 import { NextRequest } from "next/server"
 import { ok, err } from "@/lib/api-helpers"
 
-// Atualiza status automaticamente baseado no vencimento
 function calcStatus(dataVencimento?: Date | null): string {
   if (!dataVencimento) return "VALIDO"
-  const hoje  = new Date()
-  const diff  = (dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-  if (diff < 0)  return "VENCIDO"
+  const diff = (dataVencimento.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  if (diff < 0)   return "VENCIDO"
   if (diff <= 30) return "VENCENDO"
   return "VALIDO"
 }
@@ -21,27 +19,17 @@ export async function GET(req: NextRequest) {
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) throw new Error("no-prisma")
 
-    const where: any = {}
-    if (categoria) where.categoria = categoria
-    if (status)    where.status    = status
-    if (search)    where.OR = [
-      { titulo:      { contains: search, mode: "insensitive" } },
-      { responsavel: { contains: search, mode: "insensitive" } },
-      { descricao:   { contains: search, mode: "insensitive" } },
-    ]
-
-    // Atualiza status de vencimento antes de retornar
-    const docs = await (prisma as any).documentoInterno.findMany({
-      where,
-      orderBy: [{ dataVencimento: "asc" }, { createdAt: "desc" }],
+    // Atualiza status expirados automaticamente
+    const expirados = await (prisma as any).documentoInterno.findMany({
+      where: {
+        status:        { not: "ARQUIVADO" },
+        dataVencimento: { not: null },
+      },
     })
-
-    // Atualiza status automaticamente
-    const updates = docs
-      .filter((d: any) => {
-        const newStatus = d.status === "ARQUIVADO" ? "ARQUIVADO" : calcStatus(d.dataVencimento)
-        return newStatus !== d.status
-      })
+    const updates = expirados.filter((d: any) => {
+      const novo = calcStatus(d.dataVencimento)
+      return novo !== d.status
+    })
     if (updates.length > 0) {
       await Promise.all(updates.map((d: any) =>
         (prisma as any).documentoInterno.update({
@@ -51,13 +39,22 @@ export async function GET(req: NextRequest) {
       ))
     }
 
-    // Busca novamente com status atualizado
-    const result = await (prisma as any).documentoInterno.findMany({
-      where, orderBy: [{ dataVencimento: "asc" }, { createdAt: "desc" }],
+    // Busca filtrada
+    const where: any = {}
+    if (categoria) where.categoria = categoria
+    if (status)    where.status    = status
+    if (search)    where.OR = [
+      { titulo:      { contains: search, mode: "insensitive" } },
+      { responsavel: { contains: search, mode: "insensitive" } },
+    ]
+
+    const documentos = await (prisma as any).documentoInterno.findMany({
+      where,
+      orderBy: [{ dataVencimento: "asc" }, { createdAt: "desc" }],
     })
 
-    // Stats
-    const todos   = await (prisma as any).documentoInterno.findMany()
+    // Stats gerais
+    const todos = await (prisma as any).documentoInterno.findMany()
     const stats = {
       total:    todos.length,
       validos:  todos.filter((d: any) => d.status === "VALIDO").length,
@@ -65,8 +62,34 @@ export async function GET(req: NextRequest) {
       vencidos: todos.filter((d: any) => d.status === "VENCIDO").length,
     }
 
-    return ok({ documentos: result, stats })
-  } catch { return ok({ documentos: [], stats: { total:0, validos:0, vencendo:0, vencidos:0 } }) }
+    // Dados para gráfico de pizza — por categoria
+    const CATS = ["EMPRESA","CORRESPONDENTE","AFILIADO","BANCO_PARCEIRO","JURIDICO","CONTABIL","OUTROS"]
+    const porCategoria = CATS.map(cat => ({
+      categoria: cat,
+      total: todos.filter((d: any) => d.categoria === cat).length,
+    })).filter(c => c.total > 0)
+
+    // Dados para gráfico de linha — últimos 30 dias
+    const hoje = new Date()
+    const linhas: Array<{ data: string; validos: number; vencendo: number; vencidos: number }> = []
+    for (let i = 29; i >= 0; i--) {
+      const dia = new Date(hoje)
+      dia.setDate(hoje.getDate() - i)
+      dia.setHours(0, 0, 0, 0)
+      const diaStr = dia.toISOString().slice(0, 10)
+      const criados = todos.filter((d: any) => new Date(d.createdAt) <= dia)
+      linhas.push({
+        data:     diaStr,
+        validos:  criados.filter((d: any) => d.status === "VALIDO").length,
+        vencendo: criados.filter((d: any) => d.status === "VENCENDO").length,
+        vencidos: criados.filter((d: any) => d.status === "VENCIDO").length,
+      })
+    }
+
+    return ok({ documentos, stats, porCategoria, linhas })
+  } catch {
+    return ok({ documentos: [], stats: { total:0, validos:0, vencendo:0, vencidos:0 }, porCategoria: [], linhas: [] })
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -84,10 +107,10 @@ export async function POST(req: NextRequest) {
     const doc = await (prisma as any).documentoInterno.create({
       data: {
         titulo:         titulo.trim(),
-        categoria:      categoria      ?? "EMPRESA",
-        descricao:      descricao      ?? null,
-        responsavel:    responsavel    ?? null,
-        arquivoNome:    arquivoNome    ?? null,
+        categoria:      categoria   ?? "EMPRESA",
+        descricao:      descricao   ?? null,
+        responsavel:    responsavel ?? null,
+        arquivoNome:    arquivoNome ?? null,
         dataEmissao:    dataEmissao    ? new Date(dataEmissao)    : null,
         dataVencimento: venc,
         status,
