@@ -324,13 +324,20 @@ model ProdutoBanco {
 // DESPESAS OPERACIONAIS
 // ─────────────────────────────────────────────
 model Despesa {
-  id         String          @id @default(cuid())
-  descricao  String
-  categoria  CategoriaDespesa @default(OPERACIONAL)
-  valor      Float
-  data       DateTime        @default(now())
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id              String           @id @default(cuid())
+  descricao       String
+  categoria       CategoriaDespesa @default(OPERACIONAL)
+  valor           Float            // valor total
+  parcelado       Boolean          @default(false)
+  totalParcelas   Int              @default(1)
+  parcelaAtual    Int              @default(1)
+  valorParcela    Float?           // calculado: valor / totalParcelas
+  dataPrimeiraParcela DateTime?
+  formaPagamento  String           @default("À vista")
+  data            DateTime         @default(now())
+  observacao      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([data])
   @@map("despesas")

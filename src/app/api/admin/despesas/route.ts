@@ -3,11 +3,15 @@ import { ok, err } from "@/lib/api-helpers"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const mes = searchParams.get("mes") // formato YYYY-MM
+  const mes = searchParams.get("mes")
+  const cat = searchParams.get("categoria")
+
   try {
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) throw new Error("no-prisma")
+
     const where: any = {}
+    if (cat) where.categoria = cat
     if (mes) {
       const [year, month] = mes.split("-").map(Number)
       where.data = {
@@ -15,10 +19,12 @@ export async function GET(req: NextRequest) {
         lt:  new Date(year, month, 1),
       }
     }
+
     const despesas = await (prisma as any).despesa.findMany({
       where,
       orderBy: { data: "desc" },
     })
+
     return ok(despesas)
   } catch { return ok([]) }
 }
@@ -26,19 +32,35 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { descricao, categoria, valor, data } = body
-    if (!descricao?.trim()) return err("Descrição obrigatória", 400)
-    if (!valor || valor <= 0) return err("Valor inválido", 400)
+    const {
+      descricao, categoria, valor, data,
+      parcelado, totalParcelas, formaPagamento,
+      dataPrimeiraParcela, observacao,
+    } = body
+
+    if (!descricao?.trim())    return err("Descrição obrigatória", 400)
+    if (!valor || valor <= 0)  return err("Valor inválido", 400)
 
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) return err("Banco não disponível", 503)
 
+    const isParceled   = parcelado && totalParcelas > 1
+    const nParcelas    = isParceled ? parseInt(totalParcelas) : 1
+    const valorParcela = isParceled ? parseFloat(valor) / nParcelas : parseFloat(valor)
+
     const despesa = await (prisma as any).despesa.create({
       data: {
-        descricao: descricao.trim(),
-        categoria: categoria ?? "OPERACIONAL",
-        valor:     parseFloat(valor),
-        data:      data ? new Date(data) : new Date(),
+        descricao:           descricao.trim(),
+        categoria:           categoria          ?? "OPERACIONAL",
+        valor:               parseFloat(valor),
+        parcelado:           isParceled,
+        totalParcelas:       nParcelas,
+        parcelaAtual:        1,
+        valorParcela:        isParceled ? valorParcela : null,
+        formaPagamento:      formaPagamento     ?? "À vista",
+        dataPrimeiraParcela: dataPrimeiraParcela ? new Date(dataPrimeiraParcela) : null,
+        observacao:          observacao         ?? null,
+        data:                data               ? new Date(data) : new Date(),
       },
     })
     return ok(despesa, "Despesa cadastrada!", 201)

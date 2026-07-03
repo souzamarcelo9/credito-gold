@@ -1,0 +1,7 @@
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "parcelado"           BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "totalParcelas"       INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "parcelaAtual"        INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "valorParcela"        DOUBLE PRECISION;
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "dataPrimeiraParcela" TIMESTAMP(3);
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "formaPagamento"      TEXT NOT NULL DEFAULT 'À vista';
+ALTER TABLE "despesas" ADD COLUMN IF NOT EXISTS "observacao"          TEXT;
