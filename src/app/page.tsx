@@ -9,6 +9,7 @@ import { StatsCounter }      from "@/components/ui/StatsCounter"
 import { FloatingParticles } from "@/components/ui/FloatingParticles"
 import { SocialBar }         from "@/components/ui/SocialBar"
 import type { ProdutoKey }   from "@/types"
+import Link from "next/link"
 
 interface SimulacaoSolicitada {
   produto: ProdutoKey; valor: number; parcelas: number; parcelaMensal: number
@@ -335,7 +336,7 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER — cinza escuro suave ── */}
-      <footer className="bg-[#1a1a2e] px-[7%] pb-8 pt-16 text-white">
+      <footer className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
         <div className="mb-12 flex h-1.5 overflow-hidden rounded-full">
           <div className="flex-1 bg-[#1DB954]" /><div className="flex-1 bg-[#FF6B00]" /><div className="flex-1 bg-[#1DB954]" />
         </div>
@@ -362,7 +363,23 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6">
+
+        
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
+            <p className="font-['Sora'] text-sm text-white/60">Acompanhe nossas redes e fique por dentro das melhores oportunidades.</p>
+          </div>
+          <SocialBar label="" dark={true} size="sm" />
+          <div className="flex gap-2">
+              {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
+                <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
+              ))}
+        </div>
+        </div>              
+      </footer>
+
+      {/* <div className="bg-[#1a1a2e] flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-center">
           <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold. CNPJ 00.000.000/0001-00. Todos os direitos reservados.</p>
           <div className="flex flex-wrap items-center gap-4">
             <SocialBar label="" dark={true} size="sm" />
@@ -372,7 +389,14 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
+
+        {/* Footer simples */}
+      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
+           <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold Soluções Financeiras CNPJ 00.000.000/0001-00. Todos os direitos reservados. ·{" "}
+            <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
+          {" · "}          
+          </p>
       </footer>
 
       {/* WhatsApp flutuante */}

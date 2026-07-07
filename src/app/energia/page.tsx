@@ -6,6 +6,7 @@ import { AnimatedSection } from "@/components/ui/AnimatedSection"
 import { SimuladorEnergia } from "@/components/simulator/SimuladorEnergia"
 import { SocialBar } from "@/components/ui/SocialBar"
 import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
+import Link from "next/link"
 
 const ESTADOS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
@@ -320,8 +321,59 @@ export default function EnergiaPage() {
         </div>
       </section>
 
+       <footer className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
+        <div className="mb-12 flex h-1.5 overflow-hidden rounded-full">
+          <div className="flex-1 bg-[#1DB954]" /><div className="flex-1 bg-[#FF6B00]" /><div className="flex-1 bg-[#1DB954]" />
+        </div>
+        <div className="mb-12 grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div>
+            <div className="font-['Sora'] text-xl font-extrabold">
+              Crédito <span className="text-[#1DB954]">Gold</span><span className="text-[#FF6B00]">®</span>
+            </div>
+            <div className="mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">Soluções Financeiras</div>
+            <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
+          </div>
+          {[
+            { title:"Produtos", links:["Crédito Pessoal","Com Garantia","Empresarial","Consignado","Antecipação FGTS"] },
+            { title:"Empresa",  links:["Sobre nós","Programa de Afiliados","Blog","Trabalhe Conosco"] },
+            { title:"Suporte",  links:["Central de Ajuda","Privacidade (LGPD)","Termos de Uso","WhatsApp"] },
+          ].map(col => (
+            <div key={col.title}>
+              <h4 className="mb-4 font-['Sora'] text-[0.78rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">{col.title}</h4>
+              <ul className="space-y-2">
+                {col.links.map(link => (
+                  <li key={link}><a href="#" className="text-sm text-[#9ca3af] no-underline transition-colors hover:text-[#1DB954]">{link}</a></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
+            <p className="font-['Sora'] text-sm text-white/60">Acompanhe nossas redes e fique por dentro das melhores oportunidades.</p>
+          </div>
+          <SocialBar label="" dark={true} size="sm" />
+          <div className="flex gap-2">
+              {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
+                <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
+              ))}
+        </div>
+        </div>              
+      </footer>
+      
+       {/* Footer simples */}
+      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
+           <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold Soluções Financeiras CNPJ 00.000.000/0001-00. Todos os direitos reservados. ·{" "}
+            <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
+          {" · "}          
+          </p>
+      </footer>
+
       {/* ── REDES SOCIAIS — compacto ── */}
-      <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
+      {/* <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
@@ -329,17 +381,17 @@ export default function EnergiaPage() {
           </div>
           <SocialBar label="" dark={true} size="sm" />
         </div>
-      </section>
+      </section> */}
 
       {/* Footer simples */}
-      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
+      {/* <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
         <p className="text-xs text-[#6b7280]">
-          © 2026 Crédito Gold Soluções Financeiras ·{" "}
+          © 2026 Crédito Gold Soluções Financeiras CNPJ 00.000.000/0001-00·{" "}
           <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" · "}
-          <a href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</a>
+          <Link href="/" className="text-[#6b7280] no-underline hover:text-white">← Voltar ao site</Link>
         </p>
-      </footer>
+      </footer> */}
     </div>
   )
 }
