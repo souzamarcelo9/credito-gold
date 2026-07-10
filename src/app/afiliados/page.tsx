@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { useApi } from "@/hooks/useApi"
-import { formatCPF, formatPhone, formatCurrency } from "@/lib/utils"
+import { formatCPF, formatPhone } from "@/lib/utils"
+import Link from "next/link"
 
 export default function AfiliadosPage() {
   const [form, setForm]       = useState({ nome: "", cpf: "", telefone: "", email: "", codigoIndicacao: "", senha: "", confirmarSenha: "" })
@@ -13,30 +14,6 @@ export default function AfiliadosPage() {
   const [success, setSuccess] = useState(false)
   const [showSenha, setShowSenha]           = useState(false)
   const [showConfirmar, setShowConfirmar]   = useState(false)
-
-  // Comissões dinâmicas do banco
-  const [comissoes, setComissoes] = useState<Record<string,number>>({
-    GARANTIA: 350, EMPRESARIAL: 250, CONSIGNADO: 120, PESSOAL: 100, FGTS: 80, ENERGIA: 60,
-  })
-
-  useEffect(() => {
-    fetch("/api/admin/configs")
-      .then(r => r.json())
-      .then(json => {
-        if (json.success && json.data) {
-          const d = json.data
-          setComissoes({
-            GARANTIA:    parseFloat(d.COMISSAO_GARANTIA)    || 350,
-            EMPRESARIAL: parseFloat(d.COMISSAO_EMPRESARIAL) || 250,
-            CONSIGNADO:  parseFloat(d.COMISSAO_CONSIGNADO)  || 120,
-            PESSOAL:     parseFloat(d.COMISSAO_PESSOAL)     || 100,
-            FGTS:        parseFloat(d.COMISSAO_FGTS)        || 80,
-            ENERGIA:     parseFloat(d.COMISSAO_ENERGIA)     || 60,
-          })
-        }
-      })
-      .catch(() => {})
-  }, [])
   const { post, loading }     = useApi()
 
   function validate() {
@@ -322,35 +299,36 @@ export default function AfiliadosPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center">
             <h2 className="font-['Sora'] text-3xl font-extrabold text-[#0D1B2A]">Tabela de comissões</h2>
-            <p className="mt-2 text-[#6b7280]">Quanto você ganha por produto aprovado</p>
+            <p className="mt-2 text-[#6b7280]">Estimativa de ganhos por produto aprovado — valor varia conforme o contrato</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
             <table className="w-full">
               <thead>
                 <tr className="bg-[#f4f6f8]">
                   <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Produto</th>
-                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Comissão</th>
+                  <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Comissão estimada</th>
                   <th className="px-6 py-4 text-left font-['Sora'] text-xs font-bold uppercase tracking-[0.08em] text-[#6b7280]">Prazo</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { key:"GARANTIA",    produto:"Com Garantia de Imóvel",  top:true  },
-                  { key:"EMPRESARIAL", produto:"Crédito Empresarial",      top:false },
-                  { key:"CONSIGNADO",  produto:"Consignado",               top:false },
-                  { key:"PESSOAL",     produto:"Crédito Pessoal",          top:false },
-                  { key:"FGTS",        produto:"Antecipação FGTS",         top:false },
-                  { key:"ENERGIA",     produto:"Empréstimo Conta de Luz",  top:false },
-                ]
-                  .sort((a, b) => (comissoes[b.key] ?? 0) - (comissoes[a.key] ?? 0))
-                  .map((row, i) => (
-                  <tr key={row.produto} className={`border-t border-[#e5e7eb] ${row.top ? "bg-[#e8f8ee]" : i%2===0 ? "bg-white" : "bg-[#f9fafb]"}`}>
+                  { produto:"Com Garantia de Imóvel",  faixa:"A partir de R$ 200",  top:true  },
+                  { produto:"Crédito Empresarial",      faixa:"A partir de R$ 150",  top:false },
+                  { produto:"Consignado",               faixa:"A partir de R$ 80",   top:false },
+                  { produto:"Crédito Pessoal",          faixa:"A partir de R$ 60",   top:false },
+                  { produto:"Antecipação FGTS",         faixa:"A partir de R$ 50",   top:false },
+                  { produto:"Empréstimo Conta de Luz",  faixa:"A partir de R$ 40",   top:false },
+                ].map((row, i) => (
+                  <tr key={row.produto}
+                    className={`border-t border-[#e5e7eb] ${row.top ? "bg-[#e8f8ee]" : i%2===0 ? "bg-white" : "bg-[#f9fafb]"}`}>
                     <td className="px-6 py-4 font-medium text-[#0D1B2A]">
-                      {i === 0 && <span className="mr-2 rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.6rem] font-bold text-white">TOP</span>}
+                      {row.top && (
+                        <span className="mr-2 rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.6rem] font-bold text-white">TOP</span>
+                      )}
                       {row.produto}
                     </td>
-                    <td className="px-6 py-4 font-['Sora'] font-bold text-[#1DB954]">
-                      {formatCurrency(comissoes[row.key] ?? 0)}
+                    <td className="px-6 py-4">
+                      <span className="font-['Sora'] font-bold text-[#1DB954]">{row.faixa}</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-[#6b7280]">30 dias após aprovação</td>
                   </tr>
@@ -359,7 +337,8 @@ export default function AfiliadosPage() {
             </table>
           </div>
           <p className="mt-3 text-center font-['Sora'] text-xs text-[#9ca3af]">
-            * Comissões sujeitas a alteração. Valores pagos via PIX após confirmação do crédito.
+            * Os valores são estimativas e variam de acordo com o valor do contrato aprovado e o banco parceiro.
+            Pagamento via PIX após confirmação do crédito.
           </p>
         </div>
       </section>
@@ -383,7 +362,7 @@ export default function AfiliadosPage() {
           {" "}·{" "}
           <a href="/privacidade" className="text-[#1DB954] no-underline hover:underline">Privacidade</a>
           {" "}·{" "}
-          <a href="/" className="text-[#475569] no-underline hover:text-white">← Voltar ao site</a>
+          <Link href="/" className="text-[#475569] no-underline hover:text-white">← Voltar ao site</Link>
         </p>
       </footer>
     </div>
