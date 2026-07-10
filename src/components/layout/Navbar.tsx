@@ -89,7 +89,7 @@ export function Navbar({ onLoginClick }: NavbarProps) {
             { label:"Crédito",   href:"/#produtos" },
             { label:"⚡ Energia", href:"/energia"  },
             { label:"Afiliados", href:"/afiliados" },
-            { label:"Blog",      href:"/blog"      },
+           // { label:"Blog",      href:"/blog"      },
             { label:"Ajuda",     href:"/ajuda"     },
           ].map(item => (
             <li key={item.label}>
