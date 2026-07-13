@@ -101,10 +101,7 @@ model Lead {
   afiliado    Afiliado?    @relation(fields: [afiliadoId], references: [id])
   comissao    Comissao?
   documentos  Documento[]
-  dadosEnergia     LeadEnergia?
-  correspondente   LeadCorrespondente?
-  bancoId          String?
-  banco            BancoPromotora? @relation("LeadBanco", fields: [bancoId], references: [id])
+  dadosEnergia LeadEnergia?
 
   @@index([cpfHash])
   @@index([status])
@@ -252,143 +249,40 @@ model Config {
 }
 
 // ─────────────────────────────────────────────
-// CORRESPONDENTES (distribuição de leads)
+// CLIENTES PARCEIROS (PJ)
 // ─────────────────────────────────────────────
-model Correspondente {
-  id        String   @id @default(cuid())
-  nome      String
-  email     String   @unique
-  telefone  String
-  ativo     Boolean  @default(true)
-  totalLeads Int     @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  leads LeadCorrespondente[]
-
-  @@map("correspondentes")
-}
-
-model LeadCorrespondente {
-  id               String   @id @default(cuid())
-  distribuidoEm    DateTime @default(now())
-
-  leadId           String   @unique
-  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  correspondenteId String
-  correspondente   Correspondente @relation(fields: [correspondenteId], references: [id])
-
-  @@index([correspondenteId])
-  @@map("lead_correspondentes")
-}
-
-// ─────────────────────────────────────────────
-// BANCOS E PROMOTORAS
-// ─────────────────────────────────────────────
-model BancoPromotora {
-  id     String              @id @default(cuid())
-  nome   String
-  tipo   TipoBanco           @default(BANCO)
-  ativo  Boolean             @default(true)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  produtos ProdutoBanco[]
-  leads    Lead[]            @relation("LeadBanco")
-
-  @@map("bancos_promotoras")
-}
-
-enum TipoBanco {
-  BANCO
-  PROMOTORA
-}
-
-model ProdutoBanco {
-  id                  String   @id @default(cuid())
-  produto             Produto
-  comissaoCG          Float    // % que a Crédito Gold recebe do banco
-  percentualAfiliado  Float    // % da comissão CG repassada ao afiliado
-  percentualCorrespondente Float // % da comissão CG repassada ao correspondente
-  ativo               Boolean  @default(true)
-  updatedAt           DateTime @updatedAt
-
-  bancoId String
-  banco   BancoPromotora @relation(fields: [bancoId], references: [id], onDelete: Cascade)
-
-  @@unique([bancoId, produto])
-  @@map("produtos_banco")
-}
-
-// ─────────────────────────────────────────────
-// DESPESAS OPERACIONAIS
-// ─────────────────────────────────────────────
-model Despesa {
-  id              String           @id @default(cuid())
-  descricao       String
-  categoria       CategoriaDespesa @default(OPERACIONAL)
-  valor           Float            // valor total
-  parcelado       Boolean          @default(false)
-  totalParcelas   Int              @default(1)
-  parcelaAtual    Int              @default(1)
-  valorParcela    Float?           // calculado: valor / totalParcelas
-  dataPrimeiraParcela DateTime?
-  formaPagamento  String           @default("À vista")
-  data            DateTime         @default(now())
-  observacao      String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  @@index([data])
-  @@map("despesas")
-}
-
-enum CategoriaDespesa {
-  OPERACIONAL
-  PESSOAL
-  MARKETING
-  TECNOLOGIA
-  JURIDICO
-  IMPOSTOS
-  OUTROS
-}
-
-// ─────────────────────────────────────────────
-// CONTROLE DE DOCUMENTOS
-// ─────────────────────────────────────────────
-model DocumentoInterno {
+model ClienteParceiro {
   id           String              @id @default(cuid())
-  titulo       String
-  categoria    CategoriaDocumento  @default(EMPRESA)
-  descricao    String?
-  arquivoUrl   String?             // URL do arquivo no Storage
-  arquivoNome  String?
-  responsavel  String?
-  dataEmissao  DateTime?
-  dataVencimento DateTime?
-  status       StatusDocumento     @default(VALIDO)
+  razaoSocial  String
+  nomeFantasia String?
+  cnpj         String              @unique
+  tipo         TipoClienteParceiro @default(EMPRESA)
+  segmento     String?
+  responsavel  String
+  email        String
+  telefone     String
+  cidade       String?
+  estado       String?
+  status       StatusParceiro      @default(ATIVO)
+  observacoes  String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
   @@index([status])
-  @@index([dataVencimento])
-  @@index([categoria])
-  @@map("documentos_internos")
+  @@index([tipo])
+  @@map("clientes_parceiros")
 }
 
-enum CategoriaDocumento {
+enum TipoClienteParceiro {
   EMPRESA
-  CORRESPONDENTE
-  AFILIADO
-  BANCO_PARCEIRO
-  JURIDICO
-  CONTABIL
+  CORRETORA
+  ESCRITORIO
+  COOPERATIVA
   OUTROS
 }
 
-enum StatusDocumento {
-  VALIDO
-  VENCENDO    // vence em até 30 dias
-  VENCIDO
-  ARQUIVADO
+enum StatusParceiro {
+  ATIVO
+  INATIVO
+  PROSPECTO
 }
