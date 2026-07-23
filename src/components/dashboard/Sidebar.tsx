@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 
 interface NavItem {
   icon: string
@@ -33,12 +34,7 @@ const ADMIN_SECTIONS: SidebarSection[] = [
       { icon: "👥", label: "Clientes",     href: "/admin/clientes" },
       { icon: "🎯", label: "Leads",        href: "/admin/leads",     badge: 24 },
       { icon: "⚡", label: "Energia",      href: "/admin/energia"               },
-      { icon: "🏦", label: "Bancos",         href: "/admin/bancos"       },
-      { icon: "🔗", label: "Afiliados",      href: "/admin/afiliados"    },
-      { icon: "🎯", label: "Distribuição",   href: "/admin/distribuicao" },
-      { icon: "📋", label: "Documentos",    href: "/admin/documentos"   },
-      { icon: "💸", label: "Despesas",       href: "/admin/despesas"     },
-      { icon: "⚙️", label: "Configurações",  href: "/admin/configuracoes"},
+      { icon: "🔗", label: "Afiliados",    href: "/admin/afiliados" },
       { icon: "📋", label: "Propostas",    href: "/admin/propostas" },
     ],
   },
@@ -67,6 +63,20 @@ const AFILIADO_SECTIONS: SidebarSection[] = [
 
 export function Sidebar({ role = "admin" }: SidebarProps) {
   const pathname = usePathname()
+  const [naoLidas, setNaoLidas] = useState(0)
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const res  = await fetch("/api/admin/notificacoes?dest=admin&naoLidas=true")
+        const json = await res.json()
+        if (json.success) setNaoLidas(json.data.totalNaoLidas ?? 0)
+      } catch {}
+    }
+    fetch_()
+    const interval = setInterval(fetch_, 60000) // atualiza a cada 1 min
+    return () => clearInterval(interval)
+  }, [])
   const sections = role === "afiliado" ? AFILIADO_SECTIONS : ADMIN_SECTIONS
   const roleLabel = role === "afiliado" ? "Afiliados" : role === "financeiro" ? "Financeiro" : "Admin"
 
@@ -103,11 +113,15 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
                 >
                   <span className="w-5 text-center text-base">{item.icon}</span>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && (
+                  {item.href === "/admin/notificacoes" && naoLidas > 0 ? (
+                    <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
+                      {naoLidas}
+                    </span>
+                  ) : item.badge && item.href !== "/admin/notificacoes" ? (
                     <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
                       {item.badge}
                     </span>
-                  )}
+                  ) : null}
                 </Link>
               )
             })}

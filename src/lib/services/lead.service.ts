@@ -7,6 +7,17 @@ import { encrypt, hashCpf, maskCpf } from "@/lib/crypto"
 import { createAuditLog } from "@/lib/audit-log"
 import { COMISSOES } from "@/config/produtos"
 import type { CreateLeadDTO, LeadStatus } from "@/types"
+import {
+  notificarLeadAprovadoCliente,
+  notificarLeadRecusadoCliente,
+  notificarLeadAprovadoAfiliado,
+} from "@/lib/services/zapi.service"
+
+const PRODUTO_LABEL: Record<string, string> = {
+  PESSOAL:"Crédito Pessoal", GARANTIA:"Com Garantia de Imóvel",
+  EMPRESARIAL:"Crédito Empresarial", CONSIGNADO:"Consignado",
+  FGTS:"Antecipação de FGTS", ENERGIA:"Empréstimo na Conta de Luz",
+}
 
 export async function createLead(data: CreateLeadDTO, ipAddress: string) {
   const cpfHash = hashCpf(data.cpf)
@@ -76,23 +87,11 @@ export async function updateLeadStatus(
   const lead = await prisma.lead.update({
     where: { id },
     data:  { status: status.toUpperCase() as any },
-    include: {
-      banco: { include: { produtos: true } },
-    },
   })
 
   // Se aprovado, gera comissão para o afiliado
   if (status === "aprovado" && lead.afiliadoId) {
-    let valorComissao = COMISSOES[lead.produto.toLowerCase()] ?? 100
-
-    // Se tem banco vinculado com config do produto, usa o cálculo proporcional
-    const produtoBanco = (lead as any).banco?.produtos?.find(
-      (p: any) => p.produto === lead.produto && p.ativo
-    )
-    if (produtoBanco) {
-      const comissaoCG  = (lead.valor * produtoBanco.comissaoCG) / 100
-      valorComissao     = (comissaoCG * produtoBanco.percentualAfiliado) / 100
-    }
+    const valorComissao = COMISSOES[lead.produto.toLowerCase()] ?? 100
 
     await prisma.comissao.upsert({
       where:  { leadId: id },
@@ -102,7 +101,7 @@ export async function updateLeadStatus(
         valor:      valorComissao,
         status:     "PENDENTE",
       },
-      update: { valor: valorComissao },
+      update: {},
     })
 
     await prisma.afiliado.update({
@@ -113,6 +112,68 @@ export async function updateLeadStatus(
       },
     })
   }
+
+  // ── Notificações Z-API ──────────────────────────────────────────
+  const produtoLabel = PRODUTO_LABEL[lead.produto] ?? lead.produto
+
+  if (status === "aprovado") {
+    notificarLeadAprovadoCliente({
+      nomeCliente: lead.nome,
+      telefone:    lead.telefone,
+      produto:     produtoLabel,
+      valor:       lead.valor,
+    }).catch(e => console.error("[zapi] cliente aprovado:", e))
+
+    prisma.notificacao?.create?.({
+      data: {
+        tipo:        "LEAD_APROVADO" as any,
+        titulo:      `Lead aprovado — ${lead.nome}`,
+        mensagem:    `${lead.nome} teve o crédito de ${produtoLabel} aprovado.`,
+        destinatario:"admin",
+        canal:       "WHATSAPP" as any,
+        enviadaZapi: true,
+        leadId:      id,
+      },
+    }).catch(() => {})
+
+    if (lead.afiliadoId) {
+      const afiliado = await prisma.afiliado.findUnique({
+        where:  { id: lead.afiliadoId },
+        select: { nome: true, telefone: true },
+      })
+      const comissao = await prisma.comissao.findFirst({ where: { leadId: id } })
+      if (afiliado?.telefone && comissao) {
+        notificarLeadAprovadoAfiliado({
+          nomeAfiliado:  afiliado.nome,
+          telefone:      afiliado.telefone,
+          nomeCliente:   lead.nome,
+          produto:       produtoLabel,
+          valorComissao: comissao.valor,
+        }).catch(e => console.error("[zapi] afiliado aprovado:", e))
+      }
+    }
+  }
+
+  if (status === "recusado") {
+    notificarLeadRecusadoCliente({
+      nomeCliente: lead.nome,
+      telefone:    lead.telefone,
+      produto:     produtoLabel,
+    }).catch(e => console.error("[zapi] cliente recusado:", e))
+
+    prisma.notificacao?.create?.({
+      data: {
+        tipo:        "LEAD_RECUSADO" as any,
+        titulo:      `Lead recusado — ${lead.nome}`,
+        mensagem:    `${lead.nome} foi notificado da recusa de ${produtoLabel} via WhatsApp.`,
+        destinatario:"admin",
+        canal:       "WHATSAPP" as any,
+        enviadaZapi: true,
+        leadId:      id,
+      },
+    }).catch(() => {})
+  }
+  // ────────────────────────────────────────────────────────────────
 
   await createAuditLog({
     action:     "LEAD_STATUS_CHANGED",

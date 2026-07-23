@@ -286,3 +286,40 @@ enum StatusParceiro {
   INATIVO
   PROSPECTO
 }
+
+// ─────────────────────────────────────────────
+// NOTIFICAÇÕES
+// ─────────────────────────────────────────────
+model Notificacao {
+  id          String            @id @default(cuid())
+  tipo        TipoNotificacao
+  titulo      String
+  mensagem    String
+  destinatario String           // "admin" | userId | afiliadoId
+  canal       CanalNotificacao  @default(SISTEMA)
+  lida        Boolean           @default(false)
+  enviadaZapi Boolean           @default(false)
+  zapiStatus  String?           // "ok" | "erro" | "pendente"
+  leadId      String?
+  createdAt   DateTime          @default(now())
+
+  @@index([destinatario, lida])
+  @@index([createdAt])
+  @@map("notificacoes")
+}
+
+enum TipoNotificacao {
+  LEAD_NOVO
+  LEAD_APROVADO
+  LEAD_RECUSADO
+  COMISSAO_GERADA
+  DOCUMENTO_VENCENDO
+  SISTEMA
+}
+
+enum CanalNotificacao {
+  SISTEMA
+  WHATSAPP
+  EMAIL
+  TODOS
+}
