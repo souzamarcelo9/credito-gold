@@ -1,189 +1,148 @@
 /**
  * Typebot Session Service
- * Gerencia sessões de conversa entre Z-API e Typebot
- * 
- * Variáveis necessárias no Vercel:
- *   TYPEBOT_BOT_ID     — ID do bot criado (ex: cm...)
- *   TYPEBOT_API_URL    — https://typebot.io (padrão cloud)
+ * Sessões armazenadas no Supabase para persistir entre invocações serverless
  */
 
-const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://typebot.io"
-const BOT_ID       = process.env.TYPEBOT_BOT_ID ?? ""
-const PUBLIC_ID    = process.env.TYPEBOT_PUBLIC_ID ?? BOT_ID
+const TYPEBOT_API = "https://typebot.io"
+const PUBLIC_ID   = process.env.TYPEBOT_PUBLIC_ID ?? ""
 
-// Armazena sessões em memória (Vercel serverless — suficiente para MVP)
-// Em produção com alto volume, migrar para Redis/Supabase
-const sessions = new Map<string, { sessionId: string; expiresAt: number }>()
+// ── Supabase como storage de sessões ────────────────────────────────
+async function getSession(phone: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
 
-function getSession(phone: string) {
-  const s = sessions.get(phone)
-  if (s && s.expiresAt > Date.now()) return s
-  sessions.delete(phone)
-  return null
-}
-
-function saveSession(phone: string, sessionId: string) {
-  sessions.set(phone, {
-    sessionId,
-    expiresAt: Date.now() + 30 * 60 * 1000, // 30 min de inatividade
-  })
-}
-
-function clearSession(phone: string) {
-  sessions.delete(phone)
-}
-
-/**
- * Inicia uma nova conversa no Typebot
- */
-async function startChat(phone: string): Promise<{
-  sessionId: string
-  messages: TypebotMessage[]
-  input?: any
-}> {
-  const urls = [
-    `https://typebot.io/api/v1/typebots/${PUBLIC_ID}/startChat`,
-    `https://typebot.io/api/v1/typebots/${BOT_ID}/startChat`,
-  ]
-
-  // Remove duplicatas
-  const uniqueUrls = [...new Set(urls)]
-
-  let lastError = ""
-  for (const url of uniqueUrls) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          isStreamEnabled: false,
-          prefilledVariables: { whatsappOrigem: phone },
-          isOnlyRegistering: false,
-        }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        saveSession(phone, data.sessionId)
-        console.log(`[typebot] startChat OK: ${url}`)
-        return data
-      }
-
-      const errText = await res.text()
-      lastError = `${res.status} ${errText}`
-      console.warn(`[typebot] startChat falhou ${url}: ${lastError}`)
-    } catch (e: any) {
-      lastError = e.message
-      console.warn(`[typebot] startChat erro ${url}: ${lastError}`)
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/typebot_sessions?phone=eq.${encodeURIComponent(phone)}&select=session_id,expires_at`,
+      { headers: { "apikey": key, "Authorization": `Bearer ${key}` } }
+    )
+    const rows = await res.json()
+    if (!Array.isArray(rows) || rows.length === 0) return null
+    const row = rows[0]
+    // Verifica expiração (30 min)
+    if (new Date(row.expires_at) < new Date()) {
+      await deleteSession(phone)
+      return null
     }
+    return row.session_id
+  } catch { return null }
+}
+
+async function saveSession(phone: string, sessionId: string): Promise<void> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return
+
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+  try {
+    await fetch(`${url}/rest/v1/typebot_sessions`, {
+      method: "POST",
+      headers: {
+        "apikey": key, "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates",
+      },
+      body: JSON.stringify({ phone, session_id: sessionId, expires_at: expiresAt }),
+    })
+  } catch (e: any) {
+    console.error("[typebot] saveSession erro:", e.message)
+  }
+}
+
+async function deleteSession(phone: string): Promise<void> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return
+  try {
+    await fetch(
+      `${url}/rest/v1/typebot_sessions?phone=eq.${encodeURIComponent(phone)}`,
+      { method: "DELETE", headers: { "apikey": key, "Authorization": `Bearer ${key}` } }
+    )
+  } catch {}
+}
+
+// ── Typebot API ──────────────────────────────────────────────────────
+export interface TypebotMessage {
+  type: string
+  content?: { richText?: Array<{ type: string; children: Array<{ text: string }> }> }
+}
+
+async function startChat(phone: string): Promise<{ sessionId: string; messages: TypebotMessage[]; input?: any }> {
+  const res = await fetch(`${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/startChat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isStreamEnabled: false, prefilledVariables: { whatsappOrigem: phone } }),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Typebot startChat error: ${res.status} ${err}`)
+  }
+  const data = await res.json()
+  await saveSession(phone, data.sessionId)
+  console.log("[typebot] startChat OK, sessionId:", data.sessionId)
+  return data
+}
+
+async function continueWithSession(sessionId: string, message: string, phone: string) {
+  const res = await fetch(`${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/continueChat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId, message }),
+  })
+
+  if (!res.ok) {
+    if (res.status === 400 || res.status === 404) {
+      // Sessão expirou — deleta e inicia nova
+      await deleteSession(phone)
+      const start = await startChat(phone)
+      if (start.input) return continueWithSession(start.sessionId, message, phone)
+      return start
+    }
+    throw new Error(`Typebot continueChat error: ${res.status}`)
   }
 
-  throw new Error(`Typebot startChat error: ${lastError}`)
+  const data = await res.json()
+  if (data.isEnded) await deleteSession(phone)
+  return data
 }
 
-/**
- * Continua uma conversa existente enviando a resposta do usuário
- */
-async function continueChat(
+export async function continueChat(
   phone: string,
   message: string
 ): Promise<{ messages: TypebotMessage[]; input?: any; isEnded?: boolean }> {
-  const session = getSession(phone)
+  const sessionId = await getSession(phone)
 
-  if (!session) {
-    // Sem sessão — inicia o bot primeiro para pegar as boas-vindas
+  if (!sessionId) {
+    // Primeira mensagem — inicia e já processa
     const start = await startChat(phone)
-
-    // Coleta mensagens de boas-vindas do startChat
-    const welcomeMessages = start.messages ?? []
-
-    // Se o bot retornou um input (aguarda resposta), envia a mensagem do usuário
+    const welcome = start.messages ?? []
     if (start.input) {
       const reply = await continueWithSession(start.sessionId, message, phone)
       return {
-        // Devolve boas-vindas + resposta do bot à mensagem do usuário
-        messages: [...welcomeMessages, ...(reply.messages ?? [])],
+        messages: [...welcome, ...(reply.messages ?? [])],
         input:    reply.input,
         isEnded:  reply.isEnded,
       }
     }
-
-    // Bot não aguarda input ainda — devolve só as boas-vindas
     return start
   }
 
-  return continueWithSession(session.sessionId, message, phone)
+  return continueWithSession(sessionId, message, phone)
 }
 
-async function continueWithSession(
-  sessionId: string,
-  message: string,
-  phone: string
-) {
-  const res = await fetch(
-    `https://typebot.io/api/v1/typebots/${PUBLIC_ID}/continueChat`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId,
-        message,
-      }),
-    }
-  )
-
-  if (!res.ok) {
-    // Sessão expirou no Typebot → inicia nova
-    if (res.status === 400 || res.status === 404) {
-      clearSession(phone)
-      const start = await startChat(phone)
-      if (start.input) {
-        return continueWithSession(start.sessionId, message, phone)
-      }
-      return start
-    }
-    const err = await res.text()
-    throw new Error(`Typebot continueChat error: ${res.status} ${err}`)
-  }
-
-  const data = await res.json()
-
-  // Se a conversa terminou, limpa a sessão
-  if (data.isEnded) clearSession(phone)
-
-  return data
-}
-
-export interface TypebotMessage {
-  type: "text" | "image" | "video" | "audio" | "embed" | "custom-embed"
-  content: {
-    richText?: Array<{ type: string; children: Array<{ text: string }> }>
-    url?: string
-    html?: string
-  }
-}
-
-/**
- * Converte mensagens do Typebot em texto plano para o WhatsApp
- */
 export function typebotMessagesToText(messages: TypebotMessage[]): string[] {
   return messages
     .filter(m => m.type === "text" && m.content?.richText)
     .map(m => {
-      const lines = (m.content.richText ?? [])
-        .map(block =>
-          (block.children ?? [])
-            .map((c: any) => {
-              let t = c.text ?? ""
-              if (c.bold)   t = `*${t}*`
-              if (c.italic) t = `_${t}_`
-              return t
-            })
-            .join("")
-        )
-      return lines.join("\n")
+      return (m.content!.richText ?? [])
+        .map(block => block.children?.map((c: any) => {
+          let t = c.text ?? ""
+          if (c.bold)   t = `*${t}*`
+          if (c.italic) t = `_${t}_`
+          return t
+        }).join(""))
+        .join("\n")
     })
     .filter(Boolean)
 }
-
-export { startChat, continueChat, clearSession, getSession }
