@@ -58,7 +58,15 @@ export async function GET(req: NextRequest) {
     const { continueChat, typebotMessagesToText } = await import("@/lib/services/typebot.service")
     const result = await continueChat(phone, msg)
     const textos = typebotMessagesToText(result.messages ?? [])
-    return ok({ phone, mensagem: msg, respostas: textos, input: result.input?.type ?? null, ended: result.isEnded ?? false })
+    return ok({
+      phone, mensagem: msg,
+      respostas:    textos,
+      totalMsgs:    result.messages?.length ?? 0,
+      input:        result.input?.type ?? null,
+      ended:        result.isEnded ?? false,
+      // DEBUG — mostra estrutura raw das mensagens
+      rawMessages:  result.messages?.slice(0, 2) ?? [],
+    })
   } catch (e: any) {
     return err(e.message, 500)
   }
