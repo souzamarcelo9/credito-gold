@@ -128,21 +128,30 @@ export async function continueChat(
   const sessionId = await getSession(phone)
 
   if (!sessionId) {
-    // Primeira mensagem — inicia e já processa
+    // Primeira mensagem — inicia o bot para pegar boas-vindas
     const start = await startChat(phone)
     const welcome = start.messages ?? []
+
     if (start.input) {
-      const reply = await continueWithSession(start.sessionId, message, phone)
-      return {
-        messages: [...welcome, ...(reply.messages ?? [])],
-        input:    reply.input,
-        isEnded:  reply.isEnded,
+      // Bot está esperando input → envia a mensagem do usuário
+      try {
+        const reply = await continueWithSession(start.sessionId, message, phone, true)
+        return {
+          messages: [...welcome, ...(reply.messages ?? [])],
+          input:    reply.input,
+          isEnded:  reply.isEnded,
+        }
+      } catch {
+        // Se continueChat falhar, devolve só boas-vindas
+        return { messages: welcome, input: start.input }
       }
     }
-    return start
+
+    // Bot enviou boas-vindas sem input — retorna e próxima msg usa continueChat
+    return { messages: welcome, input: start.input }
   }
 
-  return continueWithSession(sessionId, message, phone)
+  return continueWithSession(sessionId, message, phone, false)
 }
 
 export function typebotMessagesToText(messages: TypebotMessage[]): string[] {
