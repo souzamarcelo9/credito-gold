@@ -7,7 +7,7 @@
  *   TYPEBOT_API_URL    — https://typebot.io (padrão cloud)
  */
 
-const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://app.typebot.io"
+const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://typebot.io"
 const BOT_ID       = process.env.TYPEBOT_BOT_ID ?? ""
 const PUBLIC_ID    = process.env.TYPEBOT_PUBLIC_ID ?? BOT_ID
 
@@ -42,10 +42,8 @@ async function startChat(phone: string): Promise<{
   input?: any
 }> {
   const urls = [
-    `${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/startChat`,
-    `${TYPEBOT_API}/api/v1/typebots/${BOT_ID}/startChat`,
-    `https://app.typebot.io/api/v1/typebots/${PUBLIC_ID}/startChat`,
-    `https://app.typebot.io/api/v1/typebots/${BOT_ID}/startChat`,
+    `https://typebot.io/api/v1/typebots/${PUBLIC_ID}/startChat`,
+    `https://typebot.io/api/v1/typebots/${BOT_ID}/startChat`,
   ]
 
   // Remove duplicatas
@@ -111,7 +109,7 @@ async function continueWithSession(
   phone: string
 ) {
   const res = await fetch(
-    `${TYPEBOT_API}/api/v1/typebots/${BOT_ID}/continueChat`,
+    `https://typebot.io/api/v1/typebots/${PUBLIC_ID}/continueChat`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
