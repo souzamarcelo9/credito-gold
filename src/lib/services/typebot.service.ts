@@ -9,6 +9,8 @@
 
 const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://typebot.io"
 const BOT_ID       = process.env.TYPEBOT_BOT_ID ?? ""
+// publicId é o slug público do bot — igual ao BOT_ID no cloud ou definido no painel
+const PUBLIC_ID    = process.env.TYPEBOT_PUBLIC_ID ?? BOT_ID
 
 // Armazena sessões em memória (Vercel serverless — suficiente para MVP)
 // Em produção com alto volume, migrar para Redis/Supabase
@@ -40,28 +42,36 @@ async function startChat(phone: string): Promise<{
   messages: TypebotMessage[]
   input?: any
 }> {
-  const res = await fetch(
+  // Tenta primeiro com o endpoint v1 autenticado, depois com o público
+  const urls = [
     `${TYPEBOT_API}/api/v1/typebots/${BOT_ID}/startChat`,
-    {
+    `${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/startChat`,
+  ]
+
+  let lastError = ""
+  for (const url of urls) {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         isStreamEnabled: false,
-        startFrom: { type: "group", groupId: undefined },
         prefilledVariables: { whatsappOrigem: phone },
         isOnlyRegistering: false,
       }),
-    }
-  )
+    })
 
-  if (!res.ok) {
+    if (res.ok) {
+      const data = await res.json()
+      saveSession(phone, data.sessionId)
+      return data
+    }
+
     const err = await res.text()
-    throw new Error(`Typebot startChat error: ${res.status} ${err}`)
+    lastError = `${res.status} ${err}`
+    console.warn(`[typebot] startChat falhou em ${url}: ${lastError}`)
   }
 
-  const data = await res.json()
-  saveSession(phone, data.sessionId)
-  return data
+  throw new Error(`Typebot startChat error: ${lastError}`)
 }
 
 /**
