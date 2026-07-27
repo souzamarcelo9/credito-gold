@@ -10,7 +10,10 @@ const PUBLIC_ID   = process.env.TYPEBOT_PUBLIC_ID ?? ""
 async function getSession(phone: string): Promise<string | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
+  if (!url || !key) {
+    console.error("[typebot] getSession: Supabase não configurado")
+    return null
+  }
 
   try {
     const res = await fetch(
@@ -18,25 +21,31 @@ async function getSession(phone: string): Promise<string | null> {
       { headers: { "apikey": key, "Authorization": `Bearer ${key}` } }
     )
     const rows = await res.json()
+    console.log("[typebot] getSession:", phone, "| status:", res.status, "| rows:", JSON.stringify(rows).slice(0, 100))
     if (!Array.isArray(rows) || rows.length === 0) return null
     const row = rows[0]
-    // Verifica expiração (30 min)
     if (new Date(row.expires_at) < new Date()) {
       await deleteSession(phone)
       return null
     }
     return row.session_id
-  } catch { return null }
+  } catch (e: any) {
+    console.error("[typebot] getSession erro:", e.message)
+    return null
+  }
 }
 
 async function saveSession(phone: string, sessionId: string): Promise<void> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return
+  if (!url || !key) {
+    console.error("[typebot] saveSession: Supabase não configurado")
+    return
+  }
 
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
   try {
-    await fetch(`${url}/rest/v1/typebot_sessions`, {
+    const res = await fetch(`${url}/rest/v1/typebot_sessions`, {
       method: "POST",
       headers: {
         "apikey": key, "Authorization": `Bearer ${key}`,
@@ -45,6 +54,8 @@ async function saveSession(phone: string, sessionId: string): Promise<void> {
       },
       body: JSON.stringify({ phone, session_id: sessionId, expires_at: expiresAt }),
     })
+    const text = await res.text()
+    console.log("[typebot] saveSession:", phone, "| status:", res.status, "| resp:", text.slice(0, 100))
   } catch (e: any) {
     console.error("[typebot] saveSession erro:", e.message)
   }
@@ -84,7 +95,7 @@ async function startChat(phone: string): Promise<{ sessionId: string; messages: 
   return data
 }
 
-async function continueWithSession(sessionId: string, message: string, phone: string) {
+async function continueWithSession(sessionId: string, message: string, phone: string, retry = false) {
   const res = await fetch(`${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/continueChat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -92,11 +103,14 @@ async function continueWithSession(sessionId: string, message: string, phone: st
   })
 
   if (!res.ok) {
-    if (res.status === 400 || res.status === 404) {
-      // Sessão expirou — deleta e inicia nova
+    if ((res.status === 400 || res.status === 404) && !retry) {
+      // Sessão expirou — inicia nova SEM recursão infinita
+      console.log("[typebot] Sessão expirada, iniciando nova...")
       await deleteSession(phone)
       const start = await startChat(phone)
-      if (start.input) return continueWithSession(start.sessionId, message, phone)
+      if (start.input) {
+        return continueWithSession(start.sessionId, message, phone, true) // retry=true evita loop
+      }
       return start
     }
     throw new Error(`Typebot continueChat error: ${res.status}`)
