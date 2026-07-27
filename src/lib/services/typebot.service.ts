@@ -7,9 +7,8 @@
  *   TYPEBOT_API_URL    — https://typebot.io (padrão cloud)
  */
 
-const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://typebot.io"
+const TYPEBOT_API  = process.env.TYPEBOT_API_URL ?? "https://app.typebot.io"
 const BOT_ID       = process.env.TYPEBOT_BOT_ID ?? ""
-// publicId é o slug público do bot — igual ao BOT_ID no cloud ou definido no painel
 const PUBLIC_ID    = process.env.TYPEBOT_PUBLIC_ID ?? BOT_ID
 
 // Armazena sessões em memória (Vercel serverless — suficiente para MVP)
@@ -42,33 +41,43 @@ async function startChat(phone: string): Promise<{
   messages: TypebotMessage[]
   input?: any
 }> {
-  // Tenta primeiro com o endpoint v1 autenticado, depois com o público
   const urls = [
-    `${TYPEBOT_API}/api/v1/typebots/${BOT_ID}/startChat`,
     `${TYPEBOT_API}/api/v1/typebots/${PUBLIC_ID}/startChat`,
+    `${TYPEBOT_API}/api/v1/typebots/${BOT_ID}/startChat`,
+    `https://app.typebot.io/api/v1/typebots/${PUBLIC_ID}/startChat`,
+    `https://app.typebot.io/api/v1/typebots/${BOT_ID}/startChat`,
   ]
 
+  // Remove duplicatas
+  const uniqueUrls = [...new Set(urls)]
+
   let lastError = ""
-  for (const url of urls) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        isStreamEnabled: false,
-        prefilledVariables: { whatsappOrigem: phone },
-        isOnlyRegistering: false,
-      }),
-    })
+  for (const url of uniqueUrls) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isStreamEnabled: false,
+          prefilledVariables: { whatsappOrigem: phone },
+          isOnlyRegistering: false,
+        }),
+      })
 
-    if (res.ok) {
-      const data = await res.json()
-      saveSession(phone, data.sessionId)
-      return data
+      if (res.ok) {
+        const data = await res.json()
+        saveSession(phone, data.sessionId)
+        console.log(`[typebot] startChat OK: ${url}`)
+        return data
+      }
+
+      const errText = await res.text()
+      lastError = `${res.status} ${errText}`
+      console.warn(`[typebot] startChat falhou ${url}: ${lastError}`)
+    } catch (e: any) {
+      lastError = e.message
+      console.warn(`[typebot] startChat erro ${url}: ${lastError}`)
     }
-
-    const err = await res.text()
-    lastError = `${res.status} ${err}`
-    console.warn(`[typebot] startChat falhou em ${url}: ${lastError}`)
   }
 
   throw new Error(`Typebot startChat error: ${lastError}`)
