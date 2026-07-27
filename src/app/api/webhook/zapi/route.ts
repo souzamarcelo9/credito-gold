@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 
-export const maxDuration = 60 // Pro plan; no free é ignorado mas não quebra
-
 function deveIgnorar(payload: any): boolean {
   if (payload?.fromMe === true)        return true
   if (payload?.isGroup === true)       return true
   if (payload?.isStatusReply === true) return true
   if (payload?.isNewsletter === true)  return true
-  const chatId = payload?.chatId ?? payload?.phone ?? ""
-  if (chatId.includes("@g.us"))        return true
-  if (chatId.includes("status"))       return true
+  const phone = payload?.phone ?? payload?.chatId ?? ""
+  if (phone.includes("@g.us"))         return true
+  if (phone.includes("status"))        return true
   return false
 }
 
@@ -28,49 +26,9 @@ function extrairPhone(payload: any): string | null {
   return raw.split("@")[0].replace(/\D/g, "") || null
 }
 
-async function enviarWhatsApp(phone: string, message: string): Promise<void> {
-  const instanceId  = process.env.ZAPI_INSTANCE_ID
-  const token       = process.env.ZAPI_TOKEN
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN
-  if (!instanceId || !token) return
-
-  const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`
-  try {
-    const res = await fetch(url, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? "" },
-      body:    JSON.stringify({ phone, message }),
-      signal:  AbortSignal.timeout(15000),
-    })
-    if (!res.ok) console.error("[zapi] Erro envio:", res.status, await res.text())
-    else console.log("[zapi] ✅ Enviado para", phone)
-  } catch (e: any) {
-    console.error("[zapi] Timeout envio:", e.message)
-  }
-}
-
-async function processarMensagem(phone: string, texto: string) {
-  try {
-    const { continueChat, typebotMessagesToText } = await import("@/lib/services/typebot.service")
-    const result = await continueChat(phone, texto)
-    const textos = typebotMessagesToText(result.messages ?? [])
-    console.log("[zapi] Respostas Typebot:", textos.length)
-    for (const msg of textos) {
-      if (msg.trim()) {
-        await enviarWhatsApp(phone, msg)
-        await new Promise(r => setTimeout(r, 600))
-      }
-    }
-  } catch (e: any) {
-    console.error("[zapi] Erro processamento:", e.message)
-  }
-}
-
 export async function POST(req: NextRequest) {
-  const startTime = Date.now()
   try {
     const payload = await req.json()
-    console.log("[zapi-webhook] phone:", payload?.phone, "| texto:", payload?.text?.message?.slice(0,50))
 
     if (deveIgnorar(payload)) {
       return NextResponse.json({ ok: true, ignored: true })
@@ -83,32 +41,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, ignored: true, reason: "sem phone/texto" })
     }
 
-    console.log("[zapi-webhook] Processando:", phone, "|", texto)
+    console.log("[zapi-webhook] Recebido:", phone, "|", texto?.slice(0, 50))
 
-    // Processa com limite de 25s para não estourar o timeout do Vercel free (10s)
-    // Se ultrapassar, retorna 200 mesmo assim para a Z-API não retentar
-    try {
-      await Promise.race([
-        processarMensagem(phone, texto.trim()),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
-      ])
-    } catch (e: any) {
-      console.warn("[zapi-webhook] Processamento interrompido:", e.message)
-      // Ainda retorna 200 para a Z-API não reenviar o webhook
-    }
+    // Dispara processamento assíncrono sem aguardar
+    const host    = req.headers.get("host") ?? "credito-gold-pi.vercel.app"
+    const proto   = host.includes("localhost") ? "http" : "https"
+    const baseUrl = `${proto}://${host}`
 
-    console.log("[zapi-webhook] Concluído em", Date.now() - startTime, "ms")
-    return NextResponse.json({ ok: true, phone })
+    // Fire-and-forget: chama o endpoint de processamento sem await
+    fetch(`${baseUrl}/api/webhook/zapi-process`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "x-internal": "1" },
+      body:    JSON.stringify({ phone, texto: texto.trim() }),
+    }).catch(e => console.error("[zapi-webhook] dispatch erro:", e.message))
+
+    // Responde imediatamente para a Z-API não dar timeout
+    return NextResponse.json({ ok: true, phone, queued: true })
   } catch (e: any) {
     console.error("[zapi-webhook] Erro:", e.message)
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 })
+    return NextResponse.json({ ok: false }, { status: 500 })
   }
 }
 
 export async function GET() {
-  return NextResponse.json({
-    status: "online",
-    service: "Crédito Gold — Z-API ↔ Typebot Bridge",
-    timestamp: new Date().toISOString(),
-  })
+  return NextResponse.json({ status: "online", service: "Crédito Gold — Z-API Bridge" })
 }
