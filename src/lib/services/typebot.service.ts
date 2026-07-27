@@ -90,13 +90,25 @@ async function continueChat(
 ): Promise<{ messages: TypebotMessage[]; input?: any; isEnded?: boolean }> {
   const session = getSession(phone)
 
-  // Sem sessão → inicia nova conversa
   if (!session) {
+    // Sem sessão — inicia o bot primeiro para pegar as boas-vindas
     const start = await startChat(phone)
-    // Se o bot já espera input na abertura, envia a mensagem
+
+    // Coleta mensagens de boas-vindas do startChat
+    const welcomeMessages = start.messages ?? []
+
+    // Se o bot retornou um input (aguarda resposta), envia a mensagem do usuário
     if (start.input) {
-      return continueWithSession(start.sessionId, message, phone)
+      const reply = await continueWithSession(start.sessionId, message, phone)
+      return {
+        // Devolve boas-vindas + resposta do bot à mensagem do usuário
+        messages: [...welcomeMessages, ...(reply.messages ?? [])],
+        input:    reply.input,
+        isEnded:  reply.isEnded,
+      }
     }
+
+    // Bot não aguarda input ainda — devolve só as boas-vindas
     return start
   }
 

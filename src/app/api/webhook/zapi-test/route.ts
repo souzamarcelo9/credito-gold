@@ -52,6 +52,23 @@ export async function GET(req: NextRequest) {
     return ok({ botId, publicId, resultados })
   }
 
+  // Testa só o startChat puro
+  if (action === "start") {
+    try {
+      const { startChat, clearSession } = await import("@/lib/services/typebot.service")
+      clearSession(phone) // limpa sessão anterior
+      const result = await startChat(phone)
+      return ok({
+        sessionId:   result.sessionId,
+        totalMsgs:   result.messages?.length ?? 0,
+        input:       result.input ?? null,
+        rawMessages: result.messages ?? [],
+      })
+    } catch (e: any) {
+      return err(e.message, 500)
+    }
+  }
+
   // Teste completo de chat
   try {
     if (!botId) return err("TYPEBOT_BOT_ID não configurado no Vercel", 500)
