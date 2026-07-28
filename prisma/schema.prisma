@@ -58,6 +58,7 @@ model Afiliado {
   user      User?    @relation(fields: [userId], references: [id])
   leads     Lead[]
   comissoes Comissao[]
+  saques    SaqueComissao[]
 
   @@map("afiliados")
 }
@@ -102,6 +103,9 @@ model Lead {
   comissao    Comissao?
   documentos  Documento[]
   dadosEnergia LeadEnergia?
+  correspondente LeadCorrespondente?
+  bancoId     String?
+  banco       BancoPromotora? @relation("LeadBanco", fields: [bancoId], references: [id])
 
   @@index([cpfHash])
   @@index([status])
@@ -175,6 +179,7 @@ model Comissao {
   lead       Lead      @relation(fields: [leadId], references: [id])
   afiliadoId String
   afiliado   Afiliado  @relation(fields: [afiliadoId], references: [id])
+  saqueId    String?
 
   @@index([afiliadoId])
   @@index([status])
@@ -322,4 +327,186 @@ enum CanalNotificacao {
   WHATSAPP
   EMAIL
   TODOS
+}
+
+// ─────────────────────────────────────────────
+// CORRESPONDENTES
+// ─────────────────────────────────────────────
+model Correspondente {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String?
+  telefone  String?
+  cidade    String?
+  estado    String?
+  ativo     Boolean  @default(true)
+  peso      Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads LeadCorrespondente[]
+
+  @@map("correspondentes")
+}
+
+model LeadCorrespondente {
+  id              String   @id @default(cuid())
+  atribuidoEm     DateTime @default(now())
+
+  leadId           String         @unique
+  lead             Lead           @relation(fields: [leadId], references: [id])
+  correspondente   Correspondente @relation(fields: [correspondenteId], references: [id])
+  correspondenteId String
+
+  @@map("leads_correspondentes")
+}
+
+// ─────────────────────────────────────────────
+// BANCOS E PROMOTORAS
+// ─────────────────────────────────────────────
+model BancoPromotora {
+  id        String     @id @default(cuid())
+  nome      String
+  tipo      TipoBanco  @default(BANCO)
+  ativo     Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  produtos ProdutoBanco[]
+  leads    Lead[]         @relation("LeadBanco")
+
+  @@map("bancos_promotoras")
+}
+
+enum TipoBanco {
+  BANCO
+  PROMOTORA
+}
+
+model ProdutoBanco {
+  id                   String  @id @default(cuid())
+  produto              Produto
+  comissaoCG           Float
+  percentualAfiliado   Float
+  percentualCorrespondente Float
+  ativo                Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+
+  bancoId String
+  banco   BancoPromotora @relation(fields: [bancoId], references: [id], onDelete: Cascade)
+
+  @@unique([bancoId, produto])
+  @@map("produtos_banco")
+}
+
+// ─────────────────────────────────────────────
+// DESPESAS OPERACIONAIS
+// ─────────────────────────────────────────────
+model Despesa {
+  id                  String           @id @default(cuid())
+  descricao           String
+  categoria           CategoriaDespesa @default(OPERACIONAL)
+  valor               Float
+  parcelado           Boolean          @default(false)
+  totalParcelas       Int              @default(1)
+  parcelaAtual        Int              @default(1)
+  valorParcela        Float?
+  dataPrimeiraParcela DateTime?
+  formaPagamento      String           @default("À vista")
+  observacao          String?
+  data                DateTime         @default(now())
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  @@index([data])
+  @@map("despesas")
+}
+
+enum CategoriaDespesa {
+  OPERACIONAL
+  PESSOAL
+  MARKETING
+  TECNOLOGIA
+  JURIDICO
+  IMPOSTOS
+  OUTROS
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENTOS INTERNOS
+// ─────────────────────────────────────────────
+model DocumentoInterno {
+  id             String             @id @default(cuid())
+  titulo         String
+  categoria      CategoriaDocumento @default(EMPRESA)
+  descricao      String?
+  arquivoUrl     String?
+  arquivoNome    String?
+  responsavel    String?
+  dataEmissao    DateTime?
+  dataVencimento DateTime?
+  status         StatusDocumento    @default(VALIDO)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status])
+  @@index([dataVencimento])
+  @@index([categoria])
+  @@map("documentos_internos")
+}
+
+enum CategoriaDocumento {
+  EMPRESA
+  CORRESPONDENTE
+  AFILIADO
+  BANCO_PARCEIRO
+  JURIDICO
+  CONTABIL
+  OUTROS
+}
+
+enum StatusDocumento {
+  VALIDO
+  VENCENDO
+  VENCIDO
+  ARQUIVADO
+}
+
+// ─────────────────────────────────────────────
+// SAQUES DE COMISSÃO (ASAAS)
+// ─────────────────────────────────────────────
+model SaqueComissao {
+  id           String      @id @default(cuid())
+  afiliadoId   String
+  afiliado     Afiliado    @relation(fields: [afiliadoId], references: [id])
+  valor        Float
+  pixChave     String
+  pixTipo      TipoChavePix @default(CPF)
+  status       StatusSaque  @default(SOLICITADO)
+  asaasId      String?
+  observacao   String?
+  solicitadoEm DateTime    @default(now())
+  pagoEm       DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([status])
+  @@index([afiliadoId])
+  @@map("saques_comissao")
+}
+
+enum TipoChavePix {
+  CPF
+  CNPJ
+  EMAIL
+  TELEFONE
+  ALEATORIA
+}
+
+enum StatusSaque {
+  SOLICITADO
+  APROVADO
+  PAGO
+  REJEITADO
+  PENDENTE
 }
