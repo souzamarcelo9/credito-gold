@@ -21,13 +21,17 @@ async function getSession(phone: string): Promise<string | null> {
       { headers: { "apikey": key, "Authorization": `Bearer ${key}` } }
     )
     const rows = await res.json()
-    console.log("[typebot] getSession:", phone, "| status:", res.status, "| rows:", JSON.stringify(rows).slice(0, 100))
+    console.log("[typebot] getSession:", phone, "| status:", res.status, "| rows:", JSON.stringify(rows).slice(0, 150))
     if (!Array.isArray(rows) || rows.length === 0) return null
     const row = rows[0]
-    if (new Date(row.expires_at) < new Date()) {
+    // Força parse como UTC adicionando Z se não tiver timezone
+    const expiresAt = row.expires_at.endsWith("Z") ? row.expires_at : row.expires_at + "Z"
+    if (new Date(expiresAt) < new Date()) {
+      console.log("[typebot] Sessão realmente expirada:", expiresAt)
       await deleteSession(phone)
       return null
     }
+    console.log("[typebot] Sessão válida até:", expiresAt)
     return row.session_id
   } catch (e: any) {
     console.error("[typebot] getSession erro:", e.message)
