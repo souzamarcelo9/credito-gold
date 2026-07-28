@@ -27,7 +27,6 @@ async function enviarWhatsApp(phone: string, message: string): Promise<void> {
   const token       = process.env.ZAPI_TOKEN
   const clientToken = process.env.ZAPI_CLIENT_TOKEN
   if (!instanceId || !token) return
-
   try {
     const res = await fetch(
       `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
@@ -35,13 +34,13 @@ async function enviarWhatsApp(phone: string, message: string): Promise<void> {
         method:  "POST",
         headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? "" },
         body:    JSON.stringify({ phone, message }),
-        signal:  AbortSignal.timeout(8000),
+        signal:  AbortSignal.timeout(10000),
       }
     )
-    if (!res.ok) console.error("[zapi] Erro envio:", res.status, await res.text())
-    else         console.log("[zapi] ✅ Enviado para", phone, "| preview:", message.slice(0, 40))
+    if (!res.ok) console.error("[zapi] Erro envio:", res.status)
+    else         console.log("[zapi] ✅ Enviado para", phone)
   } catch (e: any) {
-    console.error("[zapi] Timeout/erro envio:", e.message)
+    console.error("[zapi] Erro:", e.message)
   }
 }
 
@@ -57,25 +56,24 @@ export async function POST(req: NextRequest) {
     const texto = extrairTexto(payload)
 
     if (!phone || !texto?.trim()) {
-      return NextResponse.json({ ok: true, ignored: true, reason: "sem phone/texto" })
+      return NextResponse.json({ ok: true, ignored: true })
     }
 
     console.log("[zapi-webhook] Processando:", phone, "|", texto.slice(0, 50))
 
-    const { continueChat, typebotMessagesToText } = await import("@/lib/services/typebot.service")
-    const result = await continueChat(phone, texto.trim())
-    const textos = typebotMessagesToText(result.messages ?? [])
+    const { processarMensagem } = await import("@/lib/services/chatbot.service")
+    const respostas = await processarMensagem(phone, texto.trim())
 
-    console.log("[zapi-webhook] Respostas:", textos.length)
+    console.log("[zapi-webhook] Respostas:", respostas.length)
 
-    for (const msg of textos) {
+    for (const msg of respostas) {
       if (msg.trim()) {
         await enviarWhatsApp(phone, msg)
         await new Promise(r => setTimeout(r, 500))
       }
     }
 
-    return NextResponse.json({ ok: true, phone, enviadas: textos.length })
+    return NextResponse.json({ ok: true, phone, enviadas: respostas.length })
   } catch (e: any) {
     console.error("[zapi-webhook] Erro:", e.message)
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 })
@@ -83,5 +81,5 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "online", service: "Crédito Gold — Z-API Bridge" })
+  return NextResponse.json({ status: "online", service: "Crédito Gold — WhatsApp Bot" })
 }
