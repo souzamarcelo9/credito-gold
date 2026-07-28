@@ -5,9 +5,9 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 
 interface NavItem {
-  icon: string
-  label: string
-  href: string
+  icon:   string
+  label:  string
+  href:   string
   badge?: number
 }
 
@@ -24,48 +24,71 @@ const ADMIN_SECTIONS: SidebarSection[] = [
   {
     title: "Principal",
     items: [
-      { icon: "📊", label: "Dashboard",    href: "/admin" },
-      { icon: "💰", label: "Financeiro",   href: "/financeiro" },
+      { icon: "📊", label: "Dashboard",      href: "/admin"               },
+      { icon: "💵", label: "Financeiro",     href: "/financeiro"          },
+    ],
+  },
+  {
+    title: "Operacional",
+    items: [
+      { icon: "🎯", label: "Leads",          href: "/admin/leads"         },
+      { icon: "⚡", label: "Energia",        href: "/admin/energia"       },
+      { icon: "🔗", label: "Afiliados",      href: "/admin/afiliados"     },
+      { icon: "🔀", label: "Distribuição",   href: "/admin/distribuicao"  },
+      { icon: "🏦", label: "Bancos",         href: "/admin/bancos"        },
+    ],
+  },
+  {
+    title: "Financeiro",
+    items: [
+      { icon: "💰", label: "Saques",         href: "/admin/saques"        },
+      { icon: "💸", label: "Despesas",       href: "/admin/despesas"      },
     ],
   },
   {
     title: "Gestão",
     items: [
-      { icon: "👥", label: "Clientes",     href: "/admin/clientes" },
-      { icon: "🎯", label: "Leads",        href: "/admin/leads",     badge: 24 },
-      { icon: "⚡", label: "Energia",      href: "/admin/energia"               },
-      { icon: "🔗", label: "Afiliados",    href: "/admin/afiliados" },
-      { icon: "📋", label: "Propostas",    href: "/admin/propostas" },
+      { icon: "🏢", label: "Clientes",       href: "/admin/clientes"      },
+      { icon: "📋", label: "Documentos",     href: "/admin/documentos"    },
+      { icon: "📊", label: "Relatórios",     href: "/admin/relatorios"    },
+      { icon: "📣", label: "Notificações",   href: "/admin/notificacoes"  },
     ],
   },
   {
     title: "Sistema",
     items: [
       { icon: "⚙️", label: "Configurações", href: "/admin/configuracoes" },
-      { icon: "📣", label: "Notificações",  href: "/admin/notificacoes", badge: 7 },
-      { icon: "📑", label: "Relatórios",    href: "/admin/relatorios" },
+    ],
+  },
+]
+
+const FINANCEIRO_SECTIONS: SidebarSection[] = [
+  {
+    title: "Principal",
+    items: [
+      { icon: "📊", label: "Dashboard",      href: "/financeiro"          },
+      { icon: "💸", label: "Despesas",       href: "/admin/despesas"      },
+      { icon: "💰", label: "Saques",         href: "/admin/saques"        },
+      { icon: "📊", label: "Relatórios",     href: "/admin/relatorios"    },
     ],
   },
 ]
 
 const AFILIADO_SECTIONS: SidebarSection[] = [
   {
-    title: "Menu",
+    title: "Meu Painel",
     items: [
-      { icon: "📊", label: "Meu Painel",  href: "/afiliados/painel" },
-      { icon: "🔗", label: "Meus Links",  href: "/afiliados/links" },
-      { icon: "💸", label: "Comissões",   href: "/afiliados/comissoes" },
-      { icon: "👥", label: "Minha Rede",  href: "/afiliados/rede" },
-      { icon: "📚", label: "Materiais",   href: "/afiliados/materiais" },
+      { icon: "📊", label: "Dashboard",      href: "/painel-afiliado"     },
     ],
   },
 ]
 
 export function Sidebar({ role = "admin" }: SidebarProps) {
-  const pathname = usePathname()
+  const pathname   = usePathname()
   const [naoLidas, setNaoLidas] = useState(0)
 
   useEffect(() => {
+    if (role !== "admin") return
     const fetch_ = async () => {
       try {
         const res  = await fetch("/api/admin/notificacoes?dest=admin&naoLidas=true")
@@ -74,68 +97,79 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
       } catch {}
     }
     fetch_()
-    const interval = setInterval(fetch_, 60000) // atualiza a cada 1 min
+    const interval = setInterval(fetch_, 60000)
     return () => clearInterval(interval)
-  }, [])
-  const sections = role === "afiliado" ? AFILIADO_SECTIONS : ADMIN_SECTIONS
-  const roleLabel = role === "afiliado" ? "Afiliados" : role === "financeiro" ? "Financeiro" : "Admin"
+  }, [role])
+
+  const sections =
+    role === "financeiro" ? FINANCEIRO_SECTIONS :
+    role === "afiliado"   ? AFILIADO_SECTIONS   :
+    ADMIN_SECTIONS
+
+  const isActive = (href: string) => {
+    if (href === "/admin") return pathname === "/admin"
+    return pathname.startsWith(href)
+  }
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 flex w-[260px] flex-col overflow-y-auto bg-[#0D1B2A] px-5 py-6">
-      {/* Brand */}
-      <div className="mb-6 border-b border-white/10 pb-5">
-        <div className="font-['Sora'] text-lg font-extrabold text-white">
-          Crédito <span className="text-[#1DB954]">Gold</span>
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[260px] flex-col border-r border-[#e5e7eb] bg-[#0D1B2A]">
+
+      {/* Logo */}
+      <div className="flex h-[70px] items-center gap-3 border-b border-white/10 px-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B00] font-['Sora'] text-sm font-extrabold text-white">
+          CG
         </div>
-        <div className="mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-[#475569]">
-          {roleLabel}
+        <div>
+          <div className="font-['Sora'] text-sm font-extrabold text-white">Crédito Gold</div>
+          <div className="font-['Sora'] text-[0.6rem] font-medium uppercase tracking-[0.1em] text-white/40">
+            {role === "admin" ? "Administrador" : role === "financeiro" ? "Financeiro" : "Afiliado"}
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-6">
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         {sections.map(section => (
-          <div key={section.title}>
-            <div className="mb-2 px-3 font-['Sora'] text-[0.62rem] font-bold uppercase tracking-[0.12em] text-[#475569]">
+          <div key={section.title} className="mb-5">
+            <div className="mb-1.5 px-3 font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-white/30">
               {section.title}
             </div>
-            {section.items.map(item => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`mb-0.5 flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-['Sora'] text-sm font-medium no-underline transition-all ${
-                    isActive
-                      ? "bg-[#1DB954]/15 text-[#1DB954]"
-                      : "text-[#94a3b8] hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="w-5 text-center text-base">{item.icon}</span>
-                  <span className="flex-1">{item.label}</span>
-                  {item.href === "/admin/notificacoes" && naoLidas > 0 ? (
-                    <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
-                      {naoLidas}
-                    </span>
-                  ) : item.badge && item.href !== "/admin/notificacoes" ? (
-                    <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </Link>
-              )
-            })}
+            <div className="space-y-0.5">
+              {section.items.map(item => {
+                const active = isActive(item.href)
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 font-['Sora'] text-sm font-medium transition-all no-underline ${
+                      active
+                        ? "bg-[#1DB954] text-white shadow-[0_4px_12px_rgba(29,185,84,0.3)]"
+                        : "text-white/60 hover:bg-white/8 hover:text-white"
+                    }`}>
+                    <span className="w-5 text-center text-base">{item.icon}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {/* Badge dinâmico para notificações */}
+                    {item.href === "/admin/notificacoes" && naoLidas > 0 ? (
+                      <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
+                        {naoLidas}
+                      </span>
+                    ) : item.badge && item.href !== "/admin/notificacoes" ? (
+                      <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
+                        {item.badge}
+                      </span>
+                    ) : null}
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         ))}
       </nav>
 
-      {/* Bottom */}
-      <div className="space-y-0.5 border-t border-white/10 pt-4">
-        <Link href="/" className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-['Sora'] text-sm font-medium text-[#94a3b8] no-underline transition-all hover:bg-white/5 hover:text-white">
-          <span className="w-5 text-center">🌐</span> Ver site
-        </Link>
-        <Link href="/login" className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-['Sora'] text-sm font-medium text-[#94a3b8] no-underline transition-all hover:bg-white/5 hover:text-white">
-          <span className="w-5 text-center">🚪</span> Sair
+      {/* Footer */}
+      <div className="border-t border-white/10 p-4">
+        <Link href="/api/auth/signout"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
+          <span className="text-base">🚪</span>
+          <span>Sair</span>
         </Link>
       </div>
     </aside>
