@@ -108,14 +108,11 @@ async function continueWithSession(sessionId: string, message: string, phone: st
 
   if (!res.ok) {
     if ((res.status === 400 || res.status === 404) && !retry) {
-      // Sessão expirou — inicia nova SEM recursão infinita
-      console.log("[typebot] Sessão expirada, iniciando nova...")
+      console.log("[typebot] SessionId expirado no Typebot, reiniciando...")
       await deleteSession(phone)
+      // Inicia nova sessão e retorna boas-vindas — NÃO tenta continueChat
       const start = await startChat(phone)
-      if (start.input) {
-        return continueWithSession(start.sessionId, message, phone, true) // retry=true evita loop
-      }
-      return start
+      return { messages: start.messages ?? [], input: start.input, isEnded: false }
     }
     throw new Error(`Typebot continueChat error: ${res.status}`)
   }
