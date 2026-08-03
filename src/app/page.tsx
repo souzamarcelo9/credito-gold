@@ -344,10 +344,7 @@ export default function Home() {
         </div>
         <div className="mb-12 grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
-            <div className="font-['Sora'] text-xl font-extrabold">
-              Crédito <span className="text-[#1DB954]">Gold</span><span className="text-[#FF6B00]">®</span>
-            </div>
-            <div className="mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">Soluções Financeiras</div>
+            <img src="/logo-credito-gold.svg" alt="Crédito Gold" className="h-10 w-auto object-contain brightness-0 invert" />
             <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
           </div>
           {[

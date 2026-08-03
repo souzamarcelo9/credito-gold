@@ -66,20 +66,12 @@ export function Navbar({ onLoginClick }: NavbarProps) {
       }`}>
 
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5 no-underline">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1DB954]">
-            <span className="font-['Sora'] text-sm font-extrabold text-white">CG</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="font-['Sora'] text-lg font-extrabold leading-none">
-              <span className="text-[#1DB954]">Crédito</span>{" "}
-              <span className="text-[#FF6B00]">Gold</span>
-              <span className="text-[#FF6B00] text-xs">®</span>
-            </span>
-            <span className="text-[0.52rem] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
-              Soluções Financeiras
-            </span>
-          </div>
+        <a href="/" className="flex items-center no-underline">
+          <img
+            src="/logo-credito-gold.svg"
+            alt="Crédito Gold"
+            className="h-10 w-auto object-contain"
+          />
         </a>
 
         {/* Links de navegação */}
