@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar"
 import { useApi } from "@/hooks/useApi"
 import { formatCPF, formatPhone } from "@/lib/utils"
 import Link from "next/link"
+import { SocialBar } from "@/components/ui/SocialBar"
 
 export default function AfiliadosPage() {
   const [form, setForm]       = useState({ nome: "", cpf: "", telefone: "", email: "", codigoIndicacao: "", senha: "", confirmarSenha: "" })
@@ -317,12 +318,12 @@ export default function AfiliadosPage() {
               </thead>
               <tbody>
                 {[
-                  { produto:"Com Garantia de Imóvel",  faixa:"A partir de R$ 200",  top:true  },
-                  { produto:"Crédito Empresarial",      faixa:"A partir de R$ 150",  top:false },
-                  { produto:"Consignado",               faixa:"A partir de R$ 80",   top:false },
-                  { produto:"Crédito Pessoal",          faixa:"A partir de R$ 60",   top:false },
-                  { produto:"Antecipação FGTS",         faixa:"A partir de R$ 50",   top:false },
-                  { produto:"Empréstimo Conta de Luz",  faixa:"A partir de R$ 40",   top:false },
+                  { produto:"Com Garantia de Imóvel",  faixa:"Até R$ 200",  top:true  },
+                  { produto:"Crédito Empresarial",      faixa:"Até R$ 150",  top:false },
+                  { produto:"Consignado",               faixa:"Até R$ 80",   top:false },
+                  { produto:"Crédito Pessoal",          faixa:"Até R$ 60",   top:false },
+                  { produto:"Antecipação FGTS",         faixa:"Até R$ 50",   top:false },
+                  { produto:"Empréstimo Conta de Luz",  faixa:"Até R$ 40",   top:false },
                 ].map((row, i) => (
                   <tr key={row.produto}
                     className={`border-t border-[#e5e7eb] ${row.top ? "bg-[#e8f8ee]" : i%2===0 ? "bg-white" : "bg-[#f9fafb]"}`}>
@@ -342,8 +343,9 @@ export default function AfiliadosPage() {
             </table>
           </div>
           <p className="mt-3 text-center font-['Sora'] text-xs text-[#9ca3af]">
-            * Os valores são estimativas e variam de acordo com o valor do contrato aprovado e o banco parceiro.
-            Pagamento via PIX após confirmação do crédito.
+            * Os valores são estimativas e variam de acordo com o valor do contrato aprovado e as comissões pagas
+              pelos bancos parceiros, podendo ser +- os valores informados. Pagamento via PIX 30 dias após
+              aprovação.
           </p>
         </div>
       </section>
@@ -358,9 +360,71 @@ export default function AfiliadosPage() {
           Criar meu link agora →
         </button>
       </section>
-
+     {/* ── FOOTER — cinza escuro suave ── */}
+           <footer className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
+             <div className="mb-12 flex h-1.5 overflow-hidden rounded-full">
+               <div className="flex-1 bg-[#1DB954]" /><div className="flex-1 bg-[#FF6B00]" /><div className="flex-1 bg-[#1DB954]" />
+             </div>
+             <div className="mb-12 grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
+               <div>
+                 <img src="/logo-credito-gold.svg" alt="Crédito Gold" className="h-10 w-auto object-contain brightness-0 invert" />
+                 <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
+               </div>
+               {[
+                 { title:"Produtos", links:[
+                     { label:"Crédito Pessoal",      href:"/#produtos"         },
+                     { label:"Com Garantia",          href:"/#produtos"         },
+                     { label:"Empresarial",           href:"/#produtos"         },
+                     { label:"Consignado",            href:"/#produtos"         },
+                     { label:"Antecipação FGTS",      href:"/#produtos"         },
+                 ]},
+                 { title:"Empresa",  links:[
+                     { label:"Sobre nós",             href:"/#sobre"            },
+                     { label:"Programa de Afiliados", href:"/afiliados"         },
+                     { label:"Blog",                  href:"/blog"              },
+                     { label:"Trabalhe Conosco",      href:"/trabalhe-conosco"  },
+                 ]},
+                 { title:"Suporte",  links:[
+                     { label:"Central de Ajuda",      href:"/ajuda"             },
+                     { label:"Privacidade (LGPD)",    href:"/ajuda#lgpd"        },
+                     { label:"Termos de Uso",         href:"/ajuda#termos"      },
+                     { label:"WhatsApp",              href:"https://wa.me/5561982503427" },
+                 ]},
+               ].map(col => (
+                 <div key={col.title}>
+                   <h4 className="mb-4 font-['Sora'] text-[0.78rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">{col.title}</h4>
+                   <ul className="space-y-2">
+                     {col.links.map(item => (
+                       <li key={item.label}>
+                         <a href={item.href}
+                           target={item.href.startsWith("https") ? "_blank" : undefined}
+                           rel={item.href.startsWith("https") ? "noopener noreferrer" : undefined}
+                           className="text-sm text-[#9ca3af] no-underline transition-colors hover:text-[#1DB954]">
+                           {item.label}
+                         </a>
+                       </li>
+                     ))}
+                   </ul>
+                 </div>
+               ))}
+             </div>
+     
+             
+             <div className="flex flex-wrap items-center justify-between gap-4">
+               <div>
+                 <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
+                 <p className="font-['Sora'] text-sm text-white/60">Acompanhe nossas redes e fique por dentro das melhores oportunidades.</p>
+               </div>
+               <SocialBar label="" dark={true} size="sm" />
+               <div className="flex gap-2">
+                   {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
+                     <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
+                   ))}
+             </div>
+             </div>              
+           </footer>
       {/* Footer simples */}
-      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
+      {/* <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">
         <p className="text-xs text-[#6b7280]">
           © 2026 Crédito Gold Soluções Financeiras ·{" "}
           <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
@@ -369,7 +433,7 @@ export default function AfiliadosPage() {
           {" "}·{" "}
           <Link href="/" className="text-[#475569] no-underline hover:text-white">← Voltar ao site</Link>
         </p>
-      </footer>
+      </footer> */}
     </div>
   )
 }

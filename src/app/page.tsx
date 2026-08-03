@@ -311,7 +311,7 @@ export default function Home() {
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             {[
-              { icon:"💸", text:"Até R$ 350 por aprovação", accent:"#1DB954" },
+              { icon:"💸", text:"Até R$ 200,00 após a aprovação", accent:"#1DB954" },
               { icon:"📅", text:"Pagamento semanal via PIX", accent:"#FF6B00" },
               { icon:"📊", text:"Dashboard em tempo real",   accent:"#1DB954" },
               { icon:"🔗", text:"Link exclusivo rastreado",  accent:"#FF6B00" },

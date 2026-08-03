@@ -259,14 +259,69 @@ export default function AjudaPage() {
         </div>
       </div>
 
-      <footer className="bg-[#1a1a2e] px-[7%] py-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-xs text-[#6b7280]">
-            © 2026 Crédito Gold Soluções Financeiras · CNPJ 00.000.000/0001-00
-          </p>
-          <SocialBar label="" dark={true} size="sm" />
-        </div>
-      </footer>
+      
+           <footer className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">
+             <div className="mb-12 flex h-1.5 overflow-hidden rounded-full">
+               <div className="flex-1 bg-[#1DB954]" /><div className="flex-1 bg-[#FF6B00]" /><div className="flex-1 bg-[#1DB954]" />
+             </div>
+             <div className="mb-12 grid gap-10 md:grid-cols-[2fr_1fr_1fr_1fr]">
+               <div>
+                 <img src="/logo-credito-gold.svg" alt="Crédito Gold" className="h-10 w-auto object-contain brightness-0 invert" />
+                 <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
+               </div>
+               {[
+                 { title:"Produtos", links:[
+                     { label:"Crédito Pessoal",      href:"/#produtos"         },
+                     { label:"Com Garantia",          href:"/#produtos"         },
+                     { label:"Empresarial",           href:"/#produtos"         },
+                     { label:"Consignado",            href:"/#produtos"         },
+                     { label:"Antecipação FGTS",      href:"/#produtos"         },
+                 ]},
+                 { title:"Empresa",  links:[
+                     { label:"Sobre nós",             href:"/#sobre"            },
+                     { label:"Programa de Afiliados", href:"/afiliados"         },
+                     { label:"Blog",                  href:"/blog"              },
+                     { label:"Trabalhe Conosco",      href:"/trabalhe-conosco"  },
+                 ]},
+                 { title:"Suporte",  links:[
+                     { label:"Central de Ajuda",      href:"/ajuda"             },
+                     { label:"Privacidade (LGPD)",    href:"/ajuda#lgpd"        },
+                     { label:"Termos de Uso",         href:"/ajuda#termos"      },
+                     { label:"WhatsApp",              href:"https://wa.me/5561982503427" },
+                 ]},
+               ].map(col => (
+                 <div key={col.title}>
+                   <h4 className="mb-4 font-['Sora'] text-[0.78rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">{col.title}</h4>
+                   <ul className="space-y-2">
+                     {col.links.map(item => (
+                       <li key={item.label}>
+                         <a href={item.href}
+                           target={item.href.startsWith("https") ? "_blank" : undefined}
+                           rel={item.href.startsWith("https") ? "noopener noreferrer" : undefined}
+                           className="text-sm text-[#9ca3af] no-underline transition-colors hover:text-[#1DB954]">
+                           {item.label}
+                         </a>
+                       </li>
+                     ))}
+                   </ul>
+                 </div>
+               ))}
+             </div>
+     
+             
+             <div className="flex flex-wrap items-center justify-between gap-4">
+               <div>
+                 <h3 className="font-['Sora'] text-lg font-bold text-white">Siga a <span className="text-[#FF6B00]">Crédito Gold</span></h3>
+                 <p className="font-['Sora'] text-sm text-white/60">Acompanhe nossas redes e fique por dentro das melhores oportunidades.</p>
+               </div>
+               <SocialBar label="" dark={true} size="sm" />
+               <div className="flex gap-2">
+                   {["🔒 SSL","🏦 Bacen","📋 LGPD"].map(b => (
+                     <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-['Sora'] text-[0.68rem] text-[#6b7280]">{b}</span>
+                   ))}
+             </div>
+             </div>              
+           </footer>
     </div>
   )
 }

@@ -278,10 +278,10 @@ export default function EnergiaPage() {
             </h2>
             <ul className="space-y-4">
               {[
-                { icon:"⚡", title:"Sem consulta ao SPC/Serasa",    desc:"Aprovação baseada no histórico de pagamento da sua conta de energia.", color:"#1DB954" },
-                { icon:"💳", title:"Desconto direto na fatura",     desc:"O valor é descontado automaticamente, sem risco de esquecimento.",     color:"#FF6B00" },
-                { icon:"🏠", title:"Para todas as concessionárias", desc:"Atendemos clientes de mais de 15 concessionárias em todo o Brasil.",   color:"#1DB954" },
-                { icon:"📱", title:"Atendimento humanizado",        desc:"Um especialista acompanha cada etapa do processo pelo WhatsApp.",      color:"#FF6B00" },
+                { icon:"⚡", title:"Sem consulta ao SPC/Serasa",               desc:"Aprovação baseada no histórico de pagamento da sua conta de energia.", color:"#1DB954" },
+                { icon:"💳", title:"Desconto direto na fatura",               desc:"O valor é descontado automaticamente, sem risco de esquecimento.",     color:"#FF6B00" },
+                { icon:"🏠", title:"Disponível em concessionárias parceiras", desc:"Consulte a disponibilidade para sua concessionária e região.",   color:"#1DB954" },
+                { icon:"📱", title:"Atendimento humanizado",                  desc:"Um especialista acompanha cada etapa do processo pelo WhatsApp.",      color:"#FF6B00" },
               ].map(item => (
                 <li key={item.title} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-xl"
@@ -304,7 +304,7 @@ export default function EnergiaPage() {
                   { label:"Valor máximo",  value:"R$ 4.000,00" },
                   { label:"Taxa a partir de", value:"3,49% a.m." },
                   { label:"Prazo",         value:"6 a 24 meses" },
-                  { label:"Liberação",     value:"Após faturamento" },
+                  { label:"Liberação",     value:"Após aprovação da análise" },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between border-b border-white/10 pb-3 last:border-0 last:pb-0">
                     <span className="font-['Sora'] text-sm text-white/60">{item.label}</span>
