@@ -11,32 +11,60 @@ export async function createAfiliado(data: CreateAfiliadoDTO, ipAddress: string)
   const existing = await prisma.afiliado.findFirst({ where: { cpfHash } })
   if (existing) throw new Error("DUPLICATE_CPF")
 
+  // Email duplicado
+  if (data.email) {
+    const emailExist = await prisma.user.findUnique({ where: { email: data.email } })
+    if (emailExist) throw new Error("DUPLICATE_EMAIL")
+  }
+
   const slug = slugify(data.nome) + Math.floor(Math.random() * 900 + 100)
 
-  const afiliado = await prisma.afiliado.create({
-    data: {
-      nome:            data.nome,
-      cpf:             encrypt(data.cpf),
-      cpfHash,
-      telefone:        data.telefone,
-      email:           data.email || null,
-      slug,
-      codigoIndicacao: data.codigoIndicacao || null,
-    },
+  // Hash da senha para o User
+  const bcrypt = await import("bcryptjs")
+  const senhaHash = await bcrypt.hash(data.senha ?? data.cpf.replace(/\D/g, "").slice(0, 8), 10)
+
+  // Cria User + Afiliado em transação
+  const result = await prisma.$transaction(async (tx) => {
+    // Cria o User para autenticação
+    const user = await tx.user.create({
+      data: {
+        nome:     data.nome,
+        email:    data.email ?? `${slug}@afiliado.creditogold.com.br`,
+        password: senhaHash,
+        role:     "AFILIADO",
+        ativo:    true,
+      },
+    })
+
+    // Cria o Afiliado vinculado ao User
+    const afiliado = await tx.afiliado.create({
+      data: {
+        nome:            data.nome,
+        cpf:             encrypt(data.cpf),
+        cpfHash,
+        telefone:        data.telefone,
+        email:           data.email || null,
+        slug,
+        codigoIndicacao: data.codigoIndicacao || null,
+        userId:          user.id,
+      },
+    })
+
+    return { user, afiliado }
   })
 
   await createAuditLog({
     action:     "AFILIADO_CREATED",
     ipAddress,
-    targetId:   afiliado.id,
+    targetId:   result.afiliado.id,
     targetType: "afiliado",
     success:    true,
-    details:    { slug, nivel: afiliado.nivel },
+    details:    { slug, nivel: result.afiliado.nivel },
   })
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://creditogold.com.br"
   return {
-    afiliado: { ...afiliado, cpf: "[PROTEGIDO]" },
+    afiliado: { ...result.afiliado, cpf: "[PROTEGIDO]" },
     link:     `${baseUrl}/ref/${slug}`,
   }
 }

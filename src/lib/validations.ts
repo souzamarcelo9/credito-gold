@@ -21,11 +21,13 @@ export const createLeadSchema = z.object({
 
 // ── Afiliado ──────────────────────────────────────────────────────
 export const createAfiliadoSchema = z.object({
-  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  cpf: z.string().regex(cpfRegex, "CPF inválido"),
-  telefone: z.string().regex(phoneRegex, "Telefone inválido"),
-  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  codigoIndicacao: z.string().optional(),
+  nome:             z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  cpf:              z.string().regex(cpfRegex, "CPF inválido"),
+  telefone:         z.string().regex(phoneRegex, "Telefone inválido"),
+  email:            z.string().email("E-mail inválido").optional().or(z.literal("")),
+  codigoIndicacao:  z.string().optional(),
+  senha:            z.string().min(8, "Senha deve ter pelo menos 8 caracteres").optional(),
+  confirmarSenha:   z.string().optional(),
 })
 
 // ── Simulação ─────────────────────────────────────────────────────
@@ -47,7 +49,7 @@ export const cadastroSchema = z.object({
   password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
   cpf: z.string().regex(cpfRegex),
   telefone: z.string().regex(phoneRegex),
-})
+}) 
 
 export type CreateLeadInput    = z.infer<typeof createLeadSchema>
 export type CreateAfiliadoInput = z.infer<typeof createAfiliadoSchema>
