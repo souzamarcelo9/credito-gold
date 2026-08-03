@@ -181,7 +181,7 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
         <Link href="/" className="flex items-center gap-3 rounded-xl px-3 py-2 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
           <span>🌐</span><span>Ver site</span>
         </Link>
-        <Link href="/api/auth/signout" className="flex items-center gap-3 rounded-xl px-3 py-2 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
+        <Link href="/logout" className="flex items-center gap-3 rounded-xl px-3 py-2 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
           <span>🚪</span><span>Sair</span>
         </Link>
       </div>
