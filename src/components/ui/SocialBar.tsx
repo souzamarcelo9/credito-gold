@@ -74,6 +74,7 @@ export function SocialBar({ label = "Acompanhe nas redes sociais", dark = false,
           const Icon  = ICON_MAP[rede.key]
           const color = COLOR_MAP[rede.key]
           if (!Icon) return null
+          
           return (
             <a key={rede.key} href={rede.href} target="_blank" rel="noopener noreferrer"
               title={rede.nome}
