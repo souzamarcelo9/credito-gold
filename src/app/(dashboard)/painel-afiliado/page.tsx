@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic"
 import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
+import { Sidebar } from "@/components/dashboard/Sidebar"
 import { PeriodFilter, type DateRange } from "@/components/dashboard/PeriodFilter"
 import { MiniChart } from "@/components/dashboard/MiniChart"
 import { formatCurrency } from "@/lib/utils"
@@ -29,15 +30,7 @@ const NIVEL_COLOR: Record<string,string> = {
   BRONZE:"text-[#92400e]", PRATA:"text-[#475569]", GOLD:"text-[#854d0e]", DIAMANTE:"text-[#6d28d9]"
 }
 
-const NAV_ITEMS = [
-  { icon:"📊", label:"Dashboard",             active:true  },
-  { icon:"👥", label:"Clientes Relacionados", active:false },
-  { icon:"👁️", label:"Visitantes",            active:false },
-  { icon:"💸", label:"Pagamentos",            active:false },
-  { icon:"🎨", label:"Promoções",             active:false },
-  { icon:"📚", label:"Recursos",             active:false },
-  { icon:"⚙️", label:"Ajustes",              active:false },
-]
+// Sidebar gerenciado pelo componente global
 
 export default function PainelAfiliadoPage() {
   const { data: session } = useSession()
@@ -78,61 +71,13 @@ export default function PainelAfiliadoPage() {
   return (
     <div className="flex min-h-screen bg-[#f4f6f8]">
 
-      {/* Sidebar afiliado */}
-      <aside className="fixed bottom-0 left-0 top-0 flex w-[260px] flex-col overflow-y-auto bg-[#0D1B2A] px-5 py-6">
-        <div className="mb-8">
-          <div className="mb-1 font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.14em] text-[#FF6B00]">Painel Exclusivo</div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B00] font-['Sora'] text-sm font-extrabold text-white">CG</div>
-            <div>
-              <div className="font-['Sora'] text-base font-extrabold text-white">
-                crédito<span className="text-[#1DB954]">gold</span>
-              </div>
-              <div className="font-['Sora'] text-[0.6rem] text-[#475569]">Parceiros de indicação</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-2 font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#475569]">Principal</div>
-        {NAV_ITEMS.slice(0, 4).map(item => (
-          <div key={item.label} className={`mb-0.5 flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 font-['Sora'] text-sm font-medium transition-all ${
-            item.active ? "bg-[#1DB954]/20 text-[#1DB954]" : "text-[#94a3b8] hover:bg-white/5 hover:text-white"
-          }`}>
-            <span className="w-5 text-center text-base">{item.icon}</span>{item.label}
-          </div>
-        ))}
-
-        <div className="mb-2 mt-5 font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#475569]">Suporte & Links</div>
-        {NAV_ITEMS.slice(4).map(item => (
-          <div key={item.label} className="mb-0.5 flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 font-['Sora'] text-sm font-medium text-[#94a3b8] transition-all hover:bg-white/5 hover:text-white">
-            <span className="w-5 text-center text-base">{item.icon}</span>{item.label}
-          </div>
-        ))}
-
-        <div className="mt-auto pt-4 space-y-2">
-          {af && (
-            <div className="rounded-xl bg-white/5 px-3 py-2 text-center">
-              <div className="font-['Sora'] text-xs text-[#94a3b8]">Nível</div>
-              <div className={`font-['Sora'] text-sm font-bold ${NIVEL_COLOR[af.nivel] ?? "text-white"}`}>
-                {af.nivel}
-              </div>
-            </div>
-          )}
-          <button onClick={copyLink}
-            className="w-full rounded-xl bg-[#FF6B00] py-3 font-['Sora'] text-sm font-bold text-white transition-colors hover:bg-[#e06000]">
-            {copied ? "✓ Copiado!" : "+ Copiar Meu Link"}
-          </button>
-          <Link href="/" className="block text-center font-['Sora'] text-xs text-[#475569] hover:text-white transition-colors">
-            ← Voltar ao site
-          </Link>
-        </div>
-      </aside>
+      <Sidebar role="afiliado" />
 
       {/* Conteúdo */}
       <main className="ml-[260px] flex-1 p-6">
 
         {/* Header */}
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div id="link" className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="font-['Sora'] text-2xl font-extrabold text-[#0D1B2A]">
               {loading ? "Dashboard" : `Olá, ${af?.nome?.split(" ")[0] ?? "Afiliado"}! 👋`}
@@ -163,7 +108,7 @@ export default function PainelAfiliadoPage() {
         </div>
 
         {/* KPIs */}
-        <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div id="comissoes" className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
             { label:"Active Referrals",       value: af?.totalLeads       ?? 0, suffix:"", change:"leads gerados",      color:"#1DB954", series: data?.serie.values ?? [] },
             { label:"Comissões no Período",   value: data?.comissoesPeriodo ?? 0, prefix:"R$ ", change:"pagamento estimado", color:"#FF6B00", series: (data?.serie.values ?? []).map(v => v*100) },
@@ -228,7 +173,7 @@ export default function PainelAfiliadoPage() {
         </div>
 
         {/* Tabela atividades */}
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
+        <div id="leads" className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-[#f4f6f8] px-5 py-4">
             <div>
               <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Atividades Recentes</div>
@@ -274,6 +219,45 @@ export default function PainelAfiliadoPage() {
               <div className="py-12 text-center text-sm text-[#9ca3af]">Nenhuma atividade no período</div>
             )}
           </div>
+        </div>
+
+
+        {/* Solicitar Saque */}
+        <div id="saque" className="mt-5 rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+          <h3 className="mb-1 font-['Sora'] text-base font-bold text-[#0D1B2A]">💸 Solicitar Saque</h3>
+          <p className="mb-5 text-sm text-[#6b7280]">Comissões aprovadas há mais de 30 dias ficam disponíveis para saque via PIX.</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">Tipo de chave PIX</label>
+              <select id="pix-tipo" className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954]">
+                <option value="CPF">CPF</option>
+                <option value="EMAIL">E-mail</option>
+                <option value="TELEFONE">Telefone</option>
+                <option value="ALEATORIA">Chave aleatória</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">Chave PIX</label>
+              <input id="pix-chave" type="text" placeholder="Sua chave PIX"
+                className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none focus:border-[#1DB954]" />
+            </div>
+          </div>
+          <button
+            className="mt-4 rounded-xl bg-[#1DB954] px-6 py-3 font-['Sora'] text-sm font-bold text-white hover:bg-[#0f9c40] transition-colors"
+            onClick={async () => {
+              const chave = (document.getElementById("pix-chave") as HTMLInputElement)?.value
+              const tipo  = (document.getElementById("pix-tipo") as HTMLSelectElement)?.value
+              if (!chave || !af?.id) return alert("Preencha a chave PIX")
+              const res = await fetch("/api/afiliado/saque", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ afiliadoId: af.id, pixChave: chave, pixTipo: tipo, valor: data?.comissoesPeriodo ?? 0 }),
+              })
+              const json = await res.json()
+              alert(json.message ?? (json.success ? "Saque solicitado!" : "Erro ao solicitar"))
+            }}>
+            Solicitar saque
+          </button>
         </div>
 
       </main>

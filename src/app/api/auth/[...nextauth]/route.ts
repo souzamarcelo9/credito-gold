@@ -14,15 +14,23 @@ async function getUserFromDb(email: string, password: string) {
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) throw new Error("no prisma")
     const bcrypt = await import("bcryptjs")
-    const user   = await prisma.user.findUnique({ where: { email } })
+    const user   = await prisma.user.findUnique({
+      where:   { email },
+      include: { afiliado: { select: { id: true } } },
+    })
     if (!user || !user.ativo) return null
     const ok = await bcrypt.compare(password, user.password)
     if (!ok) return null
-    return { id: user.id, email: user.email, name: user.nome, role: user.role }
+    return {
+      id:         user.id,
+      email:      user.email,
+      name:       user.nome,
+      role:       user.role,
+      afiliadoId: (user as any).afiliado?.id ?? null,
+    }
   } catch {
-    // Fallback mock quando banco não disponível
     const u = MOCK_USERS.find(u => u.email === email && u.password === password)
-    return u ? { id: u.id, email: u.email, name: u.name, role: u.role } : null
+    return u ? { id: u.id, email: u.email, name: u.name, role: u.role, afiliadoId: null } : null
   }
 }
 
@@ -43,11 +51,17 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.role = (user as any).role
+      if (user) {
+        token.role       = (user as any).role
+        token.afiliadoId = (user as any).afiliadoId ?? null
+      }
       return token
     },
     async session({ session, token }) {
-      if (session.user) (session.user as any).role = token.role
+      if (session.user) {
+        ;(session.user as any).role       = token.role
+        ;(session.user as any).afiliadoId = token.afiliadoId ?? null
+      }
       return session
     },
   },

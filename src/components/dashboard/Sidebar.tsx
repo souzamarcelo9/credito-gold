@@ -79,16 +79,16 @@ const AFILIADO_SECTIONS: SidebarSection[] = [
   {
     title: "Meu Painel",
     items: [
-      { icon: "📊", label: "Dashboard",      href: "/painel-afiliado"     },
+      { icon: "📊", label: "Dashboard",       href: "/painel-afiliado"          },
     ],
   },
   {
     title: "Minha Conta",
     items: [
-      { icon: "🔗", label: "Meu Link",       href: "/painel-afiliado#link"       },
-      { icon: "💰", label: "Comissões",      href: "/painel-afiliado#comissoes"  },
-      { icon: "💸", label: "Solicitar Saque",href: "/painel-afiliado#saque"      },
-      { icon: "🎯", label: "Meus Leads",     href: "/painel-afiliado#leads"      },
+      { icon: "🔗", label: "Meu Link",        href: "/painel-afiliado#link"      },
+      { icon: "🎯", label: "Meus Leads",      href: "/painel-afiliado#leads"     },
+      { icon: "💰", label: "Comissões",       href: "/painel-afiliado#comissoes" },
+      { icon: "💸", label: "Solicitar Saque", href: "/painel-afiliado#saque"     },
     ],
   },
 ]
