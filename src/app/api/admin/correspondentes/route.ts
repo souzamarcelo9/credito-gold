@@ -5,12 +5,19 @@ export async function GET() {
   try {
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) throw new Error("no-prisma")
-    const data = await prisma.correspondente.findMany({
+
+    // Verifica se o modelo existe no cliente Prisma
+    if (!(prisma as any).correspondente) {
+      console.error("[correspondentes] modelo não existe no Prisma client — rode prisma generate")
+      return ok([])
+    }
+
+    const data = await (prisma as any).correspondente.findMany({
       orderBy: { nome: "asc" },
-      include: { _count: { select: { leads: true } } },
     })
     return ok(data)
-  } catch {
+  } catch (e: any) {
+    console.error("[correspondentes GET]", e.message)
     return ok([])
   }
 }
@@ -18,20 +25,35 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { nome, email, telefone } = body
+    const { nome, email, telefone, cidade, estado } = body
 
-    if (!nome?.trim())  return err("Nome obrigatório", 400)
-    if (!email?.trim()) return err("E-mail obrigatório", 400)
+    if (!nome?.trim()) return err("Nome obrigatório", 400)
 
     const prisma = (await import("@/lib/prisma")).default
     if (!prisma) return err("Banco não disponível", 503)
 
-    const c = await prisma.correspondente.create({
-      data: { nome: nome.trim(), email: email.trim(), telefone: telefone?.trim() ?? "" },
+    if (!(prisma as any).correspondente) {
+      return err("Tabela de correspondentes não encontrada. Execute prisma generate e migrate.", 500)
+    }
+
+    const c = await (prisma as any).correspondente.create({
+      data: {
+        id:       crypto.randomUUID(),
+        nome:     nome.trim(),
+        email:    email?.trim() ?? "",
+        telefone: telefone?.trim() ?? "",
+        cidade:   cidade?.trim() ?? "",
+        estado:   estado?.trim() ?? "",
+        updatedAt: new Date(),
+      },
     })
     return ok(c, "Correspondente cadastrado!", 201)
   } catch (e: any) {
+    console.error("[correspondentes POST]", e.message, e.code)
     if (e?.code === "P2002") return err("E-mail já cadastrado", 409)
-    return err("Erro ao cadastrar correspondente", 500)
+    if (e?.message?.includes("does not exist")) {
+      return err("Tabela não existe no banco. Execute o SQL de migration no Supabase.", 500)
+    }
+    return err(`Erro ao cadastrar: ${e.message}`, 500)
   }
 }
