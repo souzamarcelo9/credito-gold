@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState } from "react"
 import { Navbar }            from "@/components/layout/Navbar"
 import { SimuladorCard }     from "@/components/simulator/SimuladorCard"
@@ -28,7 +30,7 @@ export default function Home() {
       <Navbar onLoginClick={() => window.location.href = "/login"} />
 
       {/* ── HERO — fundo branco com acento verde suave ── */}
-      <section className="relative min-h-screen overflow-hidden bg-white">
+      <section id="sobre" className="relative min-h-screen overflow-hidden bg-white">
         {/* Gradiente verde muito suave no topo esquerdo */}
         <div className="absolute left-0 top-0 h-[70%] w-[55%] rounded-br-[80px] bg-white" />
         {/* Acento laranja suave top right */}
@@ -88,7 +90,7 @@ export default function Home() {
       </section>
 
       {/* ── COMO FUNCIONA — fundo cinza muito claro ── */}
-      <section className="bg-[#f9fafb] px-[7%] py-20">
+      <section id="produtos" className="bg-[#f9fafb] px-[7%] py-20">
         <AnimatedSection animation="fade-up" className="mb-12 text-center">
           <div className="mb-3 inline-block rounded-full bg-[#e8f8ee] px-5 py-1.5 font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[#0f9c40]">
             Como funciona
@@ -349,15 +351,38 @@ export default function Home() {
             <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
           </div>
           {[
-            { title:"Produtos", links:["Crédito Pessoal","Com Garantia","Empresarial","Consignado","Antecipação FGTS"] },
-            { title:"Empresa",  links:["Sobre nós","Programa de Afiliados","Blog","Trabalhe Conosco"] },
-            { title:"Suporte",  links:["Central de Ajuda","Privacidade (LGPD)","Termos de Uso","WhatsApp"] },
+            { title:"Produtos", links:[
+                { label:"Crédito Pessoal",      href:"/#produtos"         },
+                { label:"Com Garantia",          href:"/#produtos"         },
+                { label:"Empresarial",           href:"/#produtos"         },
+                { label:"Consignado",            href:"/#produtos"         },
+                { label:"Antecipação FGTS",      href:"/#produtos"         },
+            ]},
+            { title:"Empresa",  links:[
+                { label:"Sobre nós",             href:"/#sobre"            },
+                { label:"Programa de Afiliados", href:"/afiliados"         },
+                { label:"Blog",                  href:"/blog"              },
+                { label:"Trabalhe Conosco",      href:"/trabalhe-conosco"  },
+            ]},
+            { title:"Suporte",  links:[
+                { label:"Central de Ajuda",      href:"/ajuda"             },
+                { label:"Privacidade (LGPD)",    href:"/ajuda#lgpd"        },
+                { label:"Termos de Uso",         href:"/ajuda#termos"      },
+                { label:"WhatsApp",              href:"https://wa.me/5561982503427" },
+            ]},
           ].map(col => (
             <div key={col.title}>
               <h4 className="mb-4 font-['Sora'] text-[0.78rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">{col.title}</h4>
               <ul className="space-y-2">
-                {col.links.map(link => (
-                  <li key={link}><a href="#" className="text-sm text-[#9ca3af] no-underline transition-colors hover:text-[#1DB954]">{link}</a></li>
+                {col.links.map(item => (
+                  <li key={item.label}>
+                    <a href={item.href}
+                      target={item.href.startsWith("https") ? "_blank" : undefined}
+                      rel={item.href.startsWith("https") ? "noopener noreferrer" : undefined}
+                      className="text-sm text-[#9ca3af] no-underline transition-colors hover:text-[#1DB954]">
+                      {item.label}
+                    </a>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -400,7 +425,7 @@ export default function Home() {
       </footer>
 
       {/* WhatsApp flutuante */}
-      <a href="https://wa.me/5521999999999" target="_blank" rel="noopener noreferrer"
+      <a href="https://wa.me/5561982503427" target="_blank" rel="noopener noreferrer"
         className="fixed bottom-8 left-8 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-['Sora'] text-sm font-bold text-white shadow-[0_4px_20px_rgba(37,211,102,0.3)] no-underline transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(37,211,102,0.5)]">
         💬 Falar no WhatsApp
       </a>

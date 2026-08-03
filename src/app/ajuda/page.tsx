@@ -219,7 +219,7 @@ export default function AjudaPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  { icon:"💬", title:"WhatsApp",         desc:"Atendimento de seg. a sex., 9h às 18h",  action:"Conversar agora",    href:"https://wa.me/5521999999999",             bg:"#e8f8ee", color:"#1DB954" },
+                  { icon:"💬", title:"WhatsApp",         desc:"Atendimento de seg. a sex., 9h às 18h",  action:"Conversar agora",    href:"https://wa.me/5561982503427",             bg:"#e8f8ee", color:"#1DB954" },
                   { icon:"✉️", title:"E-mail",            desc:"Respondemos em até 1 dia útil",           action:"Enviar e-mail",      href:"mailto:contato@creditogold.com.br",       bg:"#e8f8ee", color:"#1DB954" },
                   { icon:"🔒", title:"Privacidade / LGPD",desc:"Solicitações de dados e direitos LGPD",  action:"Enviar solicitação", href:"mailto:privacidade@creditogold.com.br",   bg:"#e0f2fe", color:"#0891b2" },
                   { icon:"📋", title:"DPO",                desc:"Encarregado de Proteção de Dados",       action:"Contatar DPO",       href:"mailto:dpo@creditogold.com.br",          bg:"#ede9fe", color:"#6d28d9" },

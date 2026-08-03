@@ -18,6 +18,8 @@ export function AfiliadosForm() {
     if (form.nome.trim().length < 3) errs.nome = "Nome obrigatório"
     if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(form.cpf)) errs.cpf = "CPF inválido"
     if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(form.telefone)) errs.telefone = "Telefone inválido"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "E-mail inválido"
+    
     return errs
   }
 

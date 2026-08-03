@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { useApi } from "@/hooks/useApi"
@@ -22,7 +24,9 @@ export default function AfiliadosPage() {
     if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(form.cpf))     e.cpf           = "CPF inválido"
     if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(form.telefone)) e.telefone      = "Telefone inválido"
     if (form.senha.length < 8)                               e.senha         = "Senha deve ter pelo menos 8 caracteres"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))      e.email = "E-mail inválido"
     if (form.senha !== form.confirmarSenha)                  e.confirmarSenha= "As senhas não coincidem"
+    
     return e
   }
   async function handleSubmit() {
@@ -178,14 +182,15 @@ export default function AfiliadosPage() {
                   {/* E-mail */}
                   <div>
                     <label className="mb-1.5 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">
-                      E-mail <span className="font-normal normal-case tracking-normal text-[#9ca3af]">(Opcional)</span>
+                      E-mail
                     </label>
                     <div className="relative">
                       <input type="email" placeholder="email@mail.com.br" value={form.email}
                         onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                        className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-3 pr-12 font-sans text-sm text-[#0D1B2A] outline-none transition-all placeholder:text-[#9ca3af] focus:border-[#1DB954] focus:bg-white" />
+                        className={`w-full rounded-xl border-2 bg-[#f9fafb] px-4 py-3 pr-12 font-sans text-sm text-[#0D1B2A] outline-none transition-all placeholder:text-[#9ca3af] focus:border-[#1DB954] focus:bg-white ${errors.email ? "border-red-400" : "border-[#e5e7eb]"}`} />
                       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-lg text-[#d1d5db]">✉️</span>
                     </div>
+                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                   </div>
 
                   {/* Senha */}

@@ -1,48 +1,57 @@
 "use client"
+export const dynamic = "force-dynamic"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Sidebar } from "@/components/dashboard/Sidebar"
 import { PeriodFilter, type DateRange } from "@/components/dashboard/PeriodFilter"
 import { MiniChart } from "@/components/dashboard/MiniChart"
+import { formatCurrency } from "@/lib/utils"
 
-const DATA: Record<string, any> = {
-  diario:        { despesas:52000,    fat:215000,  margem:15.8, comissoes:42000,   sla:38.2, leads:12,  serie_fat:[190,210,195,215],    serie_desp:[48,51,50,52]    },
-  semanal:       { despesas:380000,   fat:1500000, margem:16.2, comissoes:310000,  sla:39.5, leads:87,  serie_fat:[1200,1350,1420,1500], serie_desp:[300,340,370,380] },
-  mensal:        { despesas:1600000,  fat:6500000, margem:17.5, comissoes:1300000, sla:40.3, leads:248, serie_fat:[4800,5200,6100,6500], serie_desp:[1200,1350,1480,1600] },
-  anual:         { despesas:18000000, fat:72000000,margem:19.2, comissoes:14000000,sla:41.0, leads:2840,serie_fat:[52,58,65,72],        serie_desp:[14,15,16,18]    },
-  personalizado: { despesas:800000,   fat:3200000, margem:16.8, comissoes:640000,  sla:39.8, leads:124, serie_fat:[2800,3000,3200,3200], serie_desp:[720,760,780,800] },
+interface FinData {
+  faturamento:       number
+  totalComissoes:    number
+  totalDespesas:     number
+  margemOperacional: number
+  totalLeads:        number
+  leadsAprovados:    number
+  ticketMedio:       number
+  serie_fat:         number[]
+  serie_desp:        number[]
+  captacao:          { canal:string; leads:number }[]
+  despesasRows:      { label:string; valor:number; pct:number }[]
 }
 
-const DESPESAS_ROWS = [
-  { label:"Pessoal e RH",         pct:42 },
-  { label:"Tecnologia",           pct:17 },
-  { label:"Marketing",            pct:15 },
-  { label:"Comissões afiliados",  pct:13 },
-  { label:"Infraestrutura cloud", pct:7  },
-  { label:"Outras",               pct:5  },
-]
-
-const CAPTACAO_ROWS = [
-  { canal:"Site orgânico", leads:98, conv:"73%", ticket:"R$ 14.200" },
-  { canal:"Afiliados",     leads:87, conv:"68%", ticket:"R$ 18.400" },
-  { canal:"WhatsApp",      leads:42, conv:"81%", ticket:"R$ 9.800"  },
-  { canal:"Indicações",    leads:21, conv:"90%", ticket:"R$ 22.000" },
-]
+const fmtM = (v: number) => v >= 1000000
+  ? `R$ ${(v/1000000).toFixed(1).replace(".",",")} Mi`
+  : v >= 1000
+  ? `R$ ${(v/1000).toFixed(0)}k`
+  : formatCurrency(v)
 
 export default function FinanceiroPage() {
-  const [range, setRange] = useState<DateRange>({ period:"mensal", label:"30 dias" })
-  const d = DATA[range.period] ?? DATA.mensal
+  const [range,   setRange]   = useState<DateRange>({ period:"mensal", label:"30 dias" })
+  const [data,    setData]    = useState<FinData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const fmtM = (v: number) => v >= 1000000
-    ? `R$ ${(v/1000000).toFixed(1).replace(".",",")} Mi`
-    : `R$ ${(v/1000).toFixed(0)}k`
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res  = await fetch(`/api/dashboard/financeiro?period=${range.period}`)
+      const json = await res.json()
+      if (json.success) setData(json.data)
+    } catch {}
+    finally { setLoading(false) }
+  }, [range.period])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const d = data
 
   return (
     <div className="flex min-h-screen bg-[#f4f6f8]">
       <Sidebar role="financeiro" />
       <main className="ml-[260px] flex-1">
 
-        {/* Header escuro */}
+        {/* Header */}
         <div className="bg-[#0D1B2A] px-8 py-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -53,137 +62,149 @@ export default function FinanceiroPage() {
               Período: <span className="font-bold text-white">{range.label}</span>
             </div>
           </div>
-
-          {/* Filtro de período */}
           <div className="mb-5 rounded-xl bg-white/8 p-3 border border-white/10">
             <PeriodFilter onChange={setRange} activeMonths />
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="rounded-xl bg-white p-4">
-              <div className="mb-1 font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">Despesas</div>
-              <div className="font-['Sora'] text-xl font-extrabold text-[#0D1B2A]">{fmtM(d.despesas)}</div>
-              <div className="mt-0.5 font-['Sora'] text-[0.62rem] text-[#9ca3af]">Custos operacionais ADM</div>
-              <MiniChart data={d.serie_desp} color="#FF6B00" height={36} />
-            </div>
-            <div className="rounded-xl bg-white p-4">
-              <div className="mb-1 font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">Faturamento</div>
-              <div className="font-['Sora'] text-xl font-extrabold text-[#0D1B2A]">{fmtM(d.fat)}</div>
-              <div className="mt-0.5 font-['Sora'] text-[0.62rem] text-[#9ca3af]">Originação Crédito Gold</div>
-              <MiniChart data={d.serie_fat} color="#1DB954" height={36} />
-            </div>
-            <div className="rounded-xl bg-[#1DB954] p-4">
-              <div className="mb-1 font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#0a5c26]">Margem Operacional</div>
-              <div className="font-['Sora'] text-xl font-extrabold text-white">↗ {d.margem.toFixed(1).replace(".",",")}%</div>
-              <div className="mt-0.5 font-['Sora'] text-[0.62rem] text-[#0a5c26]">Rentabilidade líquida</div>
-              <MiniChart data={[14,15,16,16.5,17,d.margem]} color="rgba(255,255,255,0.8)" height={36} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex-1 rounded-xl bg-white p-3">
-                <div className="font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">Comissões</div>
-                <div className="font-['Sora'] text-lg font-extrabold text-[#FF6B00]">{fmtM(d.comissoes)}</div>
+          {/* KPIs */}
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label:"Despesas",          val: d?.totalDespesas,     icon:"📉", color:"#FF6B00", serie: d?.serie_desp },
+              { label:"Faturamento",       val: d?.faturamento,       icon:"📈", color:"#1DB954", serie: d?.serie_fat  },
+              { label:"Margem Operacional",val: d?.margemOperacional, icon:"🎯", color:"#1DB954", pct:true, verde:true },
+              { label:"Comissões",         val: d?.totalComissoes,    icon:"💰", color:"#FF6B00", serie: [] },
+            ].map(k => (
+              <div key={k.label}
+                className={`relative overflow-hidden rounded-2xl border border-white/10 p-5 ${k.verde ? "bg-[#1DB954]" : "bg-white/5"}`}>
+                <div className="font-['Sora'] text-[0.62rem] font-bold uppercase tracking-[0.08em] text-white/50">{k.label}</div>
+                <div className={`mt-1 font-['Sora'] text-2xl font-extrabold ${k.verde ? "text-white" : "text-white"}`}>
+                  {loading ? "..." : k.pct ? `↗ ${k.val?.toFixed(1)}%` : fmtM(k.val ?? 0)}
+                </div>
+                {k.serie && k.serie.length > 0 && !loading && (
+                  <div className="mt-2 h-9">
+                    <MiniChart data={k.serie} color={k.verde ? "rgba(255,255,255,0.8)" : k.color} height={36} />
+                  </div>
+                )}
               </div>
-              <div className="flex-1 rounded-xl bg-white p-3">
-                <div className="font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[#6b7280]">SLA Médio</div>
-                <div className="font-['Sora'] text-lg font-extrabold text-[#1DB954]">{d.sla.toFixed(1).replace(".",",")}%</div>
+            ))}
+          </div>
+
+          {/* SLA e Ticket */}
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="font-['Sora'] text-[0.62rem] font-bold uppercase tracking-[0.08em] text-white/50">Leads no Período</div>
+              <div className="mt-1 font-['Sora'] text-xl font-extrabold text-white">
+                {loading ? "..." : `${d?.leadsAprovados ?? 0} aprovados`}
+                <span className="ml-2 font-['Sora'] text-sm text-white/40">de {d?.totalLeads ?? 0}</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="font-['Sora'] text-[0.62rem] font-bold uppercase tracking-[0.08em] text-white/50">Ticket Médio</div>
+              <div className="mt-1 font-['Sora'] text-xl font-extrabold text-[#FF6B00]">
+                {loading ? "..." : formatCurrency(d?.ticketMedio ?? 0)}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Corpo */}
-        <div className="grid gap-5 p-6 lg:grid-cols-2">
+        {/* Body */}
+        <div className="grid gap-6 p-8 lg:grid-cols-2">
 
-          {/* Despesas operacionais */}
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          {/* Despesas */}
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Despesas Operacionais</div>
+                <div className="font-['Sora'] text-base font-bold text-[#0D1B2A]">Despesas Operacionais</div>
                 <div className="font-['Sora'] text-xs text-[#9ca3af]">{range.label}</div>
               </div>
-              <span className="rounded-full bg-[#1DB954] px-3 py-1 font-['Sora'] text-[0.65rem] font-bold text-white">Consolidado</span>
+              <span className="rounded-full bg-[#e8f8ee] px-3 py-1 font-['Sora'] text-xs font-bold text-[#0f9c40]">Consolidado</span>
             </div>
             <div className="space-y-3">
-              {DESPESAS_ROWS.map(row => (
-                <div key={row.label}>
-                  <div className="mb-1 flex justify-between">
-                    <span className="font-['Sora'] text-xs text-[#374151]">{row.label}</span>
-                    <span className="font-['Sora'] text-xs font-bold text-[#0D1B2A]">
-                      {fmtM(Math.round(row.pct/100 * d.despesas))}
-                    </span>
+              {loading ? (
+                Array(5).fill(0).map((_,i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-3 flex-1 animate-pulse rounded bg-[#e5e7eb]"/>
+                    <div className="h-3 w-16 animate-pulse rounded bg-[#e5e7eb]"/>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#f4f6f8]">
-                    <div className="h-full rounded-full bg-[#0D1B2A] transition-all duration-700"
-                      style={{ width:`${row.pct}%` }} />
+                ))
+              ) : (d?.despesasRows ?? []).length === 0 ? (
+                <p className="text-center text-sm text-[#9ca3af] py-8">Nenhuma despesa registrada</p>
+              ) : (
+                (d?.despesasRows ?? []).map(row => (
+                  <div key={row.label}>
+                    <div className="mb-1 flex justify-between font-['Sora'] text-sm">
+                      <span className="text-[#374151]">{row.label}</span>
+                      <span className="font-bold text-[#0D1B2A]">{fmtM(row.valor)}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[#f4f6f8]">
+                      <div className="h-full rounded-full bg-[#FF6B00]" style={{ width:`${row.pct}%` }} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Captação de crédito */}
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Captação de Crédito</div>
-                <div className="font-['Sora'] text-xs text-[#9ca3af]">Por canal — {range.label}</div>
-              </div>
-              <div className="flex gap-1">
-                {["Todos","Online","Físicas"].map((t, i) => (
-                  <button key={t} className={`rounded-lg px-3 py-1 font-['Sora'] text-[0.65rem] font-bold transition-all ${i===0 ? "bg-[#0D1B2A] text-white" : "text-[#6b7280] hover:text-[#0D1B2A]"}`}>{t}</button>
-                ))}
-              </div>
+          {/* Captação */}
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+            <div className="mb-4">
+              <div className="font-['Sora'] text-base font-bold text-[#0D1B2A]">Captação de Crédito</div>
+              <div className="font-['Sora'] text-xs text-[#9ca3af]">Por canal — {range.label}</div>
             </div>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f4f6f8]">
-                  {["Canal","Leads","Conv.","Ticket Médio"].map(h => (
-                    <th key={h} className="pb-2 text-left font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">{h}</th>
+                <tr>
+                  {["Canal","Leads","% Aprovação"].map(h => (
+                    <th key={h} className="pb-3 text-left font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {CAPTACAO_ROWS.map(r => (
-                  <tr key={r.canal} className="border-b border-[#f4f6f8] last:border-0">
-                    <td className="py-2.5 font-['Sora'] text-xs font-medium text-[#374151]">{r.canal}</td>
-                    <td className="py-2.5 font-['Sora'] text-xs font-bold text-[#FF6B00]">{Math.round(r.leads * d.leads / 248)}</td>
-                    <td className="py-2.5">
-                      <span className="rounded-full bg-[#e8f8ee] px-2 py-0.5 font-['Sora'] text-[0.65rem] font-bold text-[#15803d]">{r.conv}</span>
-                    </td>
-                    <td className="py-2.5 font-['Sora'] text-xs text-[#374151]">{r.ticket}</td>
-                  </tr>
-                ))}
+                {loading ? Array(3).fill(0).map((_,i) => (
+                  <tr key={i}><td colSpan={3}><div className="my-2 h-6 animate-pulse rounded bg-[#f4f6f8]"/></td></tr>
+                )) : (d?.captacao ?? []).map(row => {
+                  const totalCap = (d?.totalLeads ?? 0)
+                  const conv = totalCap > 0 && row.leads > 0
+                    ? `${Math.min(99, Math.round((d?.leadsAprovados ?? 0) / totalCap * 100))}%`
+                    : "—"
+                  return (
+                    <tr key={row.canal} className="border-t border-[#f4f6f8]">
+                      <td className="py-3 font-['Sora'] text-sm text-[#374151]">{row.canal}</td>
+                      <td className="py-3 font-['Sora'] text-sm font-bold text-[#FF6B00]">{row.leads}</td>
+                      <td className="py-3">
+                        <span className="rounded-full bg-[#e8f8ee] px-2 py-0.5 font-['Sora'] text-xs font-bold text-[#0f9c40]">{conv}</span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Evolução financeira */}
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm lg:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Evolução Financeira — {range.label}</div>
-              <div className="flex items-center gap-4 font-['Sora'] text-xs text-[#6b7280]">
-                <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#1DB954]"/>Faturamento</span>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#0D1B2A]"/>Despesas</span>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF6B00]"/>Comissões</span>
+          {/* Evolução */}
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm lg:col-span-2">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="font-['Sora'] text-base font-bold text-[#0D1B2A]">Evolução Financeira — {range.label}</div>
+              <div className="flex gap-3 font-['Sora'] text-xs">
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#1DB954]"/>Faturamento</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#FF6B00]"/>Despesas</span>
               </div>
             </div>
-            <div className="flex h-44 items-end gap-3">
-              {d.serie_fat.map((v: number, i: number) => {
-                const max  = Math.max(...d.serie_fat)
-                const dv   = d.serie_desp[i] ?? d.serie_desp[d.serie_desp.length - 1]
-                const cv   = Math.round(dv * 0.8)
-                return (
-                  <div key={i} className="flex flex-1 items-end gap-0.5">
-                    <div className="flex-1 rounded-t-md bg-[#1DB954] transition-all duration-700" style={{ height:`${(v/max)*100}%` }} />
-                    <div className="flex-1 rounded-t-md bg-[#0D1B2A] transition-all duration-700" style={{ height:`${(dv/max)*100}%` }} />
-                    <div className="flex-1 rounded-t-md bg-[#FF6B00] transition-all duration-700" style={{ height:`${(cv/max)*100}%` }} />
-                  </div>
-                )
-              })}
-            </div>
+            {loading ? (
+              <div className="h-32 animate-pulse rounded bg-[#f4f6f8]"/>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-6">
+                <div>
+                  <div className="mb-1 font-['Sora'] text-xs text-[#9ca3af]">Faturamento</div>
+                  <MiniChart data={d?.serie_fat ?? []} color="#1DB954" height={80} />
+                </div>
+                <div>
+                  <div className="mb-1 font-['Sora'] text-xs text-[#9ca3af]">Despesas</div>
+                  <MiniChart data={d?.serie_desp ?? []} color="#FF6B00" height={80} />
+                </div>
+              </div>
+            )}
           </div>
-
         </div>
       </main>
     </div>

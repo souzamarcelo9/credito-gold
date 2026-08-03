@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { useState, useEffect } from "react"
 
 interface NavItem {
@@ -81,6 +82,15 @@ const AFILIADO_SECTIONS: SidebarSection[] = [
       { icon: "📊", label: "Dashboard",      href: "/painel-afiliado"     },
     ],
   },
+  {
+    title: "Minha Conta",
+    items: [
+      { icon: "🔗", label: "Meu Link",       href: "/painel-afiliado#link"       },
+      { icon: "💰", label: "Comissões",      href: "/painel-afiliado#comissoes"  },
+      { icon: "💸", label: "Solicitar Saque",href: "/painel-afiliado#saque"      },
+      { icon: "🎯", label: "Meus Leads",     href: "/painel-afiliado#leads"      },
+    ],
+  },
 ]
 
 export function Sidebar({ role = "admin" }: SidebarProps) {
@@ -107,30 +117,37 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
     ADMIN_SECTIONS
 
   const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin"
-    return pathname.startsWith(href)
+    const base = href.split("#")[0]
+    if (base === "/admin") return pathname === "/admin"
+    return pathname.startsWith(base)
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[260px] flex-col border-r border-[#e5e7eb] bg-[#0D1B2A]">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[260px] flex-col bg-[#0D1B2A]">
 
       {/* Logo */}
-      <div className="flex h-[70px] items-center gap-3 border-b border-white/10 px-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B00] font-['Sora'] text-sm font-extrabold text-white">
-          CG
-        </div>
-        <div>
-          <div className="font-['Sora'] text-sm font-extrabold text-white">Crédito Gold</div>
-          <div className="font-['Sora'] text-[0.6rem] font-medium uppercase tracking-[0.1em] text-white/40">
-            {role === "admin" ? "Administrador" : role === "financeiro" ? "Financeiro" : "Afiliado"}
-          </div>
+      <div className="flex h-[70px] items-center justify-center border-b border-white/10 px-5">
+        <Image
+          src="/logo-credito-gold.svg"
+          alt="Crédito Gold"
+          width={160}
+          height={48}
+          priority
+          className="h-10 w-auto object-contain"
+        />
+      </div>
+
+      {/* Role label */}
+      <div className="px-5 pb-1 pt-3">
+        <div className="font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-white/30">
+          {role === "admin" ? "Administrador" : role === "financeiro" ? "Financeiro" : "Afiliado"}
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
         {sections.map(section => (
-          <div key={section.title} className="mb-5">
+          <div key={section.title} className="mb-4">
             <div className="mb-1.5 px-3 font-['Sora'] text-[0.6rem] font-bold uppercase tracking-[0.12em] text-white/30">
               {section.title}
             </div>
@@ -146,16 +163,11 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
                     }`}>
                     <span className="w-5 text-center text-base">{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
-                    {/* Badge dinâmico para notificações */}
-                    {item.href === "/admin/notificacoes" && naoLidas > 0 ? (
+                    {item.href === "/admin/notificacoes" && naoLidas > 0 && (
                       <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
                         {naoLidas}
                       </span>
-                    ) : item.badge && item.href !== "/admin/notificacoes" ? (
-                      <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 font-['Sora'] text-[0.62rem] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    ) : null}
+                    )}
                   </Link>
                 )
               })}
@@ -165,11 +177,12 @@ export function Sidebar({ role = "admin" }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-white/10 p-4">
-        <Link href="/api/auth/signout"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
-          <span className="text-base">🚪</span>
-          <span>Sair</span>
+      <div className="border-t border-white/10 p-4 space-y-0.5">
+        <Link href="/" className="flex items-center gap-3 rounded-xl px-3 py-2 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
+          <span>🌐</span><span>Ver site</span>
+        </Link>
+        <Link href="/api/auth/signout" className="flex items-center gap-3 rounded-xl px-3 py-2 font-['Sora'] text-sm font-medium text-white/40 no-underline transition-all hover:bg-white/8 hover:text-white/80">
+          <span>🚪</span><span>Sair</span>
         </Link>
       </div>
     </aside>

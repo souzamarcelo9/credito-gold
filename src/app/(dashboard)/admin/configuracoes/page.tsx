@@ -19,7 +19,7 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [msg, setMsg]           = useState("")
-  const [activeTab, setActiveTab] = useState<"juros"|"limites">("juros")
+  const [activeTab, setActiveTab] = useState<"juros"|"limites"|"redes">("juros")
 
   useEffect(() => {
     fetch("/api/admin/configs")
@@ -50,16 +50,17 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  const field = (label: string, key: string, suffix = "") => (
+  const field = (label: string, key: string, suffix = "", placeholder = "", type = "number") => (
     <div key={key}>
       <label className="mb-1 block font-['Sora'] text-[0.65rem] font-bold uppercase tracking-[0.06em] text-[#6b7280]">
         {label}
       </label>
       <div className="flex items-center gap-2">
         <input
-          type="number"
-          step="0.01"
+          type={type}
+          step={type === "number" ? "0.01" : undefined}
           value={configs[key] ?? ""}
+          placeholder={placeholder}
           onChange={e => update(key, e.target.value)}
           className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-sm outline-none transition-all focus:border-[#1DB954] focus:bg-white"
         />
@@ -71,6 +72,7 @@ export default function ConfiguracoesPage() {
   const TABS = [
     { key:"juros",   label:"⚡ Taxas de Juros"   },
     { key:"limites", label:"📊 Limites e Prazos"  },
+    { key:"redes",   label:"🌐 Redes Sociais"      },
   ]
 
   return (
@@ -147,6 +149,34 @@ export default function ConfiguracoesPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Redes Sociais */}
+        {activeTab === "redes" && (
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+            <h3 className="mb-1 font-['Sora'] text-base font-bold text-[#0D1B2A]">🌐 Links das Redes Sociais</h3>
+            <p className="mb-6 text-sm text-[#6b7280]">Configure os links que aparecerão na SocialBar do site. Deixe em branco para ocultar a rede.</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[
+                { key:"instagram", icon:"📸", label:"Instagram",  placeholder:"https://instagram.com/creditogold"        },
+                { key:"facebook",  icon:"👥", label:"Facebook",   placeholder:"https://facebook.com/creditogold"          },
+                { key:"youtube",   icon:"▶️", label:"YouTube",    placeholder:"https://youtube.com/@creditogold"          },
+                { key:"tiktok",    icon:"🎵", label:"TikTok",     placeholder:"https://tiktok.com/@creditogold"           },
+                { key:"linkedin",  icon:"💼", label:"LinkedIn",   placeholder:"https://linkedin.com/company/creditogold"  },
+                { key:"whatsapp",  icon:"💬", label:"WhatsApp",   placeholder:"https://wa.me/5561982503427"               },
+              ].map(r => (
+                <div key={r.key}>
+                  <label className="mb-1.5 block font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#374151]">
+                    {r.icon} {r.label}
+                  </label>
+                  {field(r.label, `REDE_${r.key.toUpperCase()}`, "", r.placeholder, "text")}
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-[#9ca3af]">
+              💡 As alterações aparecem automaticamente no site após salvar.
+            </p>
           </div>
         )}
 

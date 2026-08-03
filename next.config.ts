@@ -44,10 +44,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "storage.googleapis.com" },
     ],
   },
-
+  experimental: {
+  scrollRestoration: true,
+  },
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
   },
+  
 }
 
 export default nextConfig
