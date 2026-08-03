@@ -1,21 +1,33 @@
 import { NextRequest } from "next/server"
 import { ok, err } from "@/lib/api-helpers"
 
+// Helper para chamar Supabase REST diretamente (bypass do Prisma client desatualizado)
+async function supabase(path: string, opts: RequestInit = {}) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const res = await fetch(`${url}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      "apikey":        key,
+      "Authorization": `Bearer ${key}`,
+      "Content-Type":  "application/json",
+      "Prefer":        "return=representation",
+      ...(opts.headers ?? {}),
+    },
+  })
+  const text = await res.text()
+  try { return { ok: res.ok, status: res.status, data: JSON.parse(text) } }
+  catch { return { ok: res.ok, status: res.status, data: text } }
+}
+
 export async function GET() {
   try {
-    const prisma = (await import("@/lib/prisma")).default
-    if (!prisma) throw new Error("no-prisma")
-
-    // Verifica se o modelo existe no cliente Prisma
-    if (!(prisma as any).correspondente) {
-      console.error("[correspondentes] modelo não existe no Prisma client — rode prisma generate")
+    const res = await supabase('correspondentes?select=*&order=nome.asc')
+    if (!res.ok) {
+      console.error("[correspondentes GET]", res.status, res.data)
       return ok([])
     }
-
-    const data = await (prisma as any).correspondente.findMany({
-      orderBy: { nome: "asc" },
-    })
-    return ok(data)
+    return ok(res.data)
   } catch (e: any) {
     console.error("[correspondentes GET]", e.message)
     return ok([])
@@ -29,31 +41,48 @@ export async function POST(req: NextRequest) {
 
     if (!nome?.trim()) return err("Nome obrigatório", 400)
 
-    const prisma = (await import("@/lib/prisma")).default
-    if (!prisma) return err("Banco não disponível", 503)
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
 
-    if (!(prisma as any).correspondente) {
-      return err("Tabela de correspondentes não encontrada. Execute prisma generate e migrate.", 500)
-    }
-
-    const c = await (prisma as any).correspondente.create({
-      data: {
-        id:       crypto.randomUUID(),
-        nome:     nome.trim(),
-        email:    email?.trim() ?? "",
+    const res = await supabase("correspondentes", {
+      method:  "POST",
+      headers: { "Prefer": "return=representation" },
+      body: JSON.stringify({
+        id, nome: nome.trim(),
+        email:    email?.trim()    ?? "",
         telefone: telefone?.trim() ?? "",
-        cidade:   cidade?.trim() ?? "",
-        estado:   estado?.trim() ?? "",
-        updatedAt: new Date(),
-      },
+        cidade:   cidade?.trim()   ?? "",
+        estado:   estado?.trim()   ?? "",
+        ativo:    true,
+        peso:     1,
+        "createdAt": now,
+        "updatedAt": now,
+      }),
     })
-    return ok(c, "Correspondente cadastrado!", 201)
-  } catch (e: any) {
-    console.error("[correspondentes POST]", e.message, e.code)
-    if (e?.code === "P2002") return err("E-mail já cadastrado", 409)
-    if (e?.message?.includes("does not exist")) {
-      return err("Tabela não existe no banco. Execute o SQL de migration no Supabase.", 500)
+
+    if (!res.ok) {
+      console.error("[correspondentes POST]", res.status, res.data)
+      if (res.status === 409) return err("E-mail já cadastrado", 409)
+      return err(`Erro ao cadastrar: ${JSON.stringify(res.data)}`, 500)
     }
-    return err(`Erro ao cadastrar: ${e.message}`, 500)
+
+    const created = Array.isArray(res.data) ? res.data[0] : res.data
+    return ok(created, "Correspondente cadastrado!", 201)
+  } catch (e: any) {
+    console.error("[correspondentes POST]", e.message)
+    return err(`Erro: ${e.message}`, 500)
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get("id")
+    if (!id) return err("ID obrigatório", 400)
+
+    await supabase(`correspondentes?id=eq.${id}`, { method: "DELETE" })
+    return ok(null, "Correspondente removido!")
+  } catch (e: any) {
+    return err(e.message, 500)
   }
 }
