@@ -43,6 +43,9 @@ export default function DespesasPage() {
   const [catFilter, setCatFilter] = useState("")
   const [form, setForm]           = useState({ ...FORM_EMPTY })
 
+  const [previsao,  setPrevisao]  = useState<Despesa[]>([])
+  const [totalMesVal, setTotalMesVal] = useState(0)
+
   const fetchDespesas = useCallback(async () => {
     setLoading(true)
     try {
@@ -50,7 +53,25 @@ export default function DespesasPage() {
       if (catFilter) p.set("categoria", catFilter)
       const res  = await fetch(`/api/admin/despesas?${p}`)
       const json = await res.json()
-      if (json.success) setDespesas(Array.isArray(json.data) ? json.data : [])
+      if (json.success) {
+        const d = json.data
+        // Suporta tanto o formato antigo (array) quanto o novo ({despesas, total})
+        if (Array.isArray(d)) {
+          setDespesas(d)
+          setTotalMesVal(d.reduce((s: number, x: any) => s + (x.valorParcela ?? x.valor), 0))
+        } else {
+          setDespesas(d.despesas ?? [])
+          setTotalMesVal(d.total ?? 0)
+        }
+      }
+
+      // Carrega previsão dos próximos 3 meses
+      const prev = await fetch("/api/admin/despesas?preview=true")
+      const prevJson = await prev.json()
+      if (prevJson.success) {
+        const pd = prevJson.data
+        setPrevisao(Array.isArray(pd) ? pd : (pd.despesas ?? []))
+      }
     } finally { setLoading(false) }
   }, [mes, catFilter])
 
@@ -110,9 +131,16 @@ export default function DespesasPage() {
   }
 
   // Cálculos do mês
-  const totalMes     = despesas.filter(d => !catFilter || d.categoria === catFilter)
+  const totalMes     = totalMesVal || despesas.filter(d => !catFilter || d.categoria === catFilter)
                                 .reduce((s, d) => s + (d.parcelado && d.valorParcela ? d.valorParcela : d.valor), 0)
   const totalParceladas = despesas.filter(d => d.parcelado).length
+
+  // Agrupa previsão por mês
+  const previsaoPorMes = previsao.reduce((acc: Record<string, number>, d) => {
+    const key = new Date(d.data).toLocaleDateString("pt-BR", { month:"long", year:"numeric" })
+    acc[key] = (acc[key] ?? 0) + (d.valorParcela ?? d.valor)
+    return acc
+  }, {})
 
   // Breakdown por categoria
   const porCategoria = CATEGORIAS.map(c => ({
@@ -177,6 +205,28 @@ export default function DespesasPage() {
             </div>
           ))}
         </div>
+
+        {/* Previsão de custos */}
+        {Object.keys(previsaoPorMes).length > 0 && (
+          <div className="mb-5 rounded-[14px] border border-[#e5e7eb] bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-lg">📅</span>
+              <span className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Previsão de custos — próximos meses</span>
+              <span className="rounded-full bg-[#fff3e8] px-2 py-0.5 font-['Sora'] text-[0.65rem] font-bold text-[#FF6B00]">parcelas futuras</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {Object.entries(previsaoPorMes).map(([mes, total]) => (
+                <div key={mes} className="rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-4">
+                  <div className="font-['Sora'] text-xs font-bold uppercase tracking-[0.06em] text-[#9ca3af] capitalize">{mes}</div>
+                  <div className="mt-1 font-['Sora'] text-xl font-extrabold text-[#dc2626]">{formatCurrency(total)}</div>
+                  <div className="mt-0.5 font-['Sora'] text-[0.65rem] text-[#9ca3af]">
+                    {previsao.filter(d => new Date(d.data).toLocaleDateString("pt-BR", { month:"long", year:"numeric" }) === mes).length} lançamentos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
 
