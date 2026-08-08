@@ -49,7 +49,7 @@ export default function FinanceiroPage() {
   return (
     <div className="flex min-h-screen bg-[#f4f6f8]">
       <Sidebar role="financeiro" />
-      <main className="ml-[260px] flex-1">
+      <main className="ml-0 pt-14 lg:ml-[240px] lg:pt-0 flex-1">
 
         {/* Header */}
         <div className="bg-[#0D1B2A] px-8 py-6">

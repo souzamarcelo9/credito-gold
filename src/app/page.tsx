@@ -414,16 +414,16 @@ export default function Home() {
         </div> */}
 
         {/* Footer simples */}
-      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
+      {/* <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
            <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold Soluções Financeiras CNPJ 00.000.000/0001-00. Todos os direitos reservados. ·{" "}
             <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" · "}          
           </p>
-      </footer>
+      </footer> */}
 
       {/* WhatsApp flutuante */}
       <a href="https://wa.me/5561982503427" target="_blank" rel="noopener noreferrer"
-        className="fixed bottom-8 left-8 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-['Sora'] text-sm font-bold text-white shadow-[0_4px_20px_rgba(37,211,102,0.3)] no-underline transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(37,211,102,0.5)]">
+        className="fixed bottom-4 right-4 z-40 sm:bottom-8 sm:left-8 sm:right-auto flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-['Sora'] text-sm font-bold text-white shadow-[0_4px_20px_rgba(37,211,102,0.3)] no-underline transition-all hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(37,211,102,0.5)]">
         💬 Falar no WhatsApp
       </a>
 

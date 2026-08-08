@@ -74,7 +74,7 @@ export default function PainelAfiliadoPage() {
       <Sidebar role="afiliado" />
 
       {/* Conteúdo */}
-      <main className="ml-[260px] flex-1 p-6">
+      <main className="ml-0 pt-14 lg:ml-[240px] lg:pt-0 flex-1 p-6">
 
         {/* Header */}
         <div id="link" className="mb-5 flex flex-wrap items-start justify-between gap-4">

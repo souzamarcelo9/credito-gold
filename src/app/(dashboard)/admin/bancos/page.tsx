@@ -136,7 +136,7 @@ export default function BancosPage() {
   return (
     <div className="flex min-h-screen bg-[#f4f6f8]">
       <Sidebar role="admin" />
-      <main className="ml-[260px] flex-1 p-8">
+      <main className="ml-0 pt-14 lg:ml-[240px] lg:pt-0 flex-1 p-8">
 
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
