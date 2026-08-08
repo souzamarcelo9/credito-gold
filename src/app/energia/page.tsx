@@ -334,7 +334,7 @@ export default function EnergiaPage() {
             <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-[#9ca3af]">Crédito rápido, seguro e transparente. Regulamentado pelo Banco Central do Brasil.</p>
           </div>
           {[
-            { title:"Produtos", links:["Crédito Pessoal","Com Garantia","Empresarial","Consignado","Antecipação FGTS"] },
+            { title:"Produtos", links:["Crédito Pessoal","Com Garantia","Empresarial","Consignado","Antecipação FGTS","Energia"] },
             { title:"Empresa",  links:["Sobre nós","Programa de Afiliados","Blog","Trabalhe Conosco"] },
             { title:"Suporte",  links:["Central de Ajuda","Privacidade (LGPD)","Termos de Uso","WhatsApp"] },
           ].map(col => (
@@ -365,12 +365,12 @@ export default function EnergiaPage() {
       </footer>
       
        {/* Footer simples */}
-      <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
+      {/* <footer className="bg-[#1a1a2e] px-[7%] py-6 text-center">        
            <p className="text-xs text-[#6b7280]">© 2026 Crédito Gold Soluções Financeiras CNPJ 00.000.000/0001-00. Todos os direitos reservados. ·{" "}
             <a href="/termos" className="text-[#1DB954] no-underline hover:underline">Termos de uso</a>
           {" · "}          
           </p>
-      </footer>
+      </footer> */}
 
       {/* ── REDES SOCIAIS — compacto ── */}
       {/* <section className="bg-gradient-to-br from-[#0a2e1a] to-[#0f3d22] px-[7%] py-10">

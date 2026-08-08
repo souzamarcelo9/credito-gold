@@ -354,6 +354,7 @@ export default function Home() {
                 { label:"Empresarial",           href:"/#produtos"         },
                 { label:"Consignado",            href:"/#produtos"         },
                 { label:"Antecipação FGTS",      href:"/#produtos"         },
+                { label:"Energia",               href:"/energia"           },
             ]},
             { title:"Empresa",  links:[
                 { label:"Sobre nós",             href:"/#sobre"            },
