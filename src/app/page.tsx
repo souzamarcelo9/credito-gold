@@ -41,7 +41,7 @@ export default function Home() {
         <div className="absolute right-10 top-40 h-32 w-32 animate-[pulse_5s_ease-in-out_infinite_2s] rounded-full bg-[#1DB954]/5" />
         <FloatingParticles />
 
-        <div className="relative z-10 grid min-h-screen grid-cols-1 items-center gap-8 px-[7%] pb-16 pt-[90px] md:grid-cols-2">
+        <div className="relative z-10 grid min-h-screen grid-cols-1 items-center gap-8 px-[7%] pb-16 pt-[80px] md:pt-[90px] md:grid-cols-2">
           {/* Left */}
           <div style={{ animation:"fadeUp 0.8s ease both" }}>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1DB954]/30 bg-[#e8f8ee] px-4 py-1.5 font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[#0f9c40]">

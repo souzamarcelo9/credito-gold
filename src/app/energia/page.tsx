@@ -80,7 +80,7 @@ export default function EnergiaPage() {
       <Navbar onLoginClick={() => window.location.href = "/login"} />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen overflow-hidden pt-[70px]">
+      <section className="relative min-h-screen overflow-hidden pt-[64px]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0a2e1a] via-[#0f3d22] to-[#051a0e]" />
         <div className="absolute -right-32 -top-32 h-[500px] w-[500px] animate-[pulse_6s_ease-in-out_infinite] rounded-full bg-[#1DB954]/8" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 animate-[pulse_5s_ease-in-out_infinite_1s] rounded-full bg-[#FF6B00]/8" />

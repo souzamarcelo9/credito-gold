@@ -1,228 +1,145 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 interface NavbarProps {
   onLoginClick?: () => void
 }
 
+const NAV_LINKS = [
+  { label: "Sobre nós",    href: "/#sobre"           },
+  { label: "Crédito",      href: "/#produtos"         },
+  { label: "Como funciona",href: "/#produtos"         },
+  { label: "Afiliados",    href: "/afiliados"         },
+  { label: "Energia",      href: "/energia"           },
+  { label: "Ajuda",        href: "/ajuda"             },
+]
+
 export function Navbar({ onLoginClick }: NavbarProps) {
-  const [scrolled, setScrolled]       = useState(false)
-  const [dropdown, setDropdown]       = useState<"login" | "cadastro" | null>(null)
-  const [email, setEmail]             = useState("")
-  const [pass, setPass]               = useState("")
-  const [error, setError]             = useState("")
-  const [loading, setLoading]         = useState(false)
-  const [nome, setNome]               = useState("")
-  const [telefone, setTelefone]       = useState("")
-  const [showPass, setShowPass]       = useState(false)
-  const dropRef = useRef<HTMLDivElement>(null)
+  const pathname              = usePathname()
+  const [open, setOpen]       = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
+  // Detecta scroll para mudar aparência da navbar
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", handler)
-    return () => window.removeEventListener("scroll", handler)
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Fecha dropdown ao clicar fora
+  // Fecha ao mudar de rota
+  useEffect(() => { setOpen(false) }, [pathname])
+
+  // Bloqueia scroll quando aberto
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
-        setDropdown(null)
-      }
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [])
-
-  function toggleDropdown(type: "login" | "cadastro") {
-    setDropdown(prev => prev === type ? null : type)
-    setError("")
-  }
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setError(""); setLoading(true)
-    const result = await signIn("credentials", { email, password: pass, redirect: false })
-    setLoading(false)
-    if (result?.error) { setError("E-mail ou senha incorretos."); return }
-    const { getSession } = await import("next-auth/react")
-    const session = await getSession()
-    const role = (session?.user as any)?.role
-    window.location.href = role === "AFILIADO" ? "/painel-afiliado" : role === "FINANCEIRO" ? "/financeiro" : "/admin"
-  }
-
-  async function handleCadastro(e: React.FormEvent) {
-    e.preventDefault()
-    // Redireciona para a página completa de cadastro de afiliado
-    window.location.href = "/afiliados"
-  }
+    document.body.style.overflow = open ? "hidden" : ""
+    return () => { document.body.style.overflow = "" }
+  }, [open])
 
   return (
     <>
-      <nav className={`fixed left-0 right-0 top-0 z-50 flex h-[70px] items-center justify-between px-[5%] bg-white transition-all duration-300 ${
-        scrolled ? "shadow-[0_4px_24px_rgba(0,0,0,0.10)]" : "border-b border-[#e5e7eb]"
+      {/* ── NAVBAR ── */}
+      <header className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
+        scrolled || open
+          ? "bg-white/95 shadow-[0_2px_20px_rgba(0,0,0,0.08)] backdrop-blur-md"
+          : "bg-white/80 backdrop-blur-sm"
       }`}>
+        <div className="flex h-[64px] items-center justify-between px-[5%]">
 
-        {/* Logo */}
-        <a href="/" className="flex items-center no-underline">
-          <img
-            src="/logo-credito-gold.svg"
-            alt="Crédito Gold"
-            className="h-10 w-auto object-contain"
-          />
-        </a>
+          {/* Logo */}
+          <Link href="/" className="flex items-center no-underline">
+            <img
+              src="/logo-credito-gold.svg"
+              alt="Crédito Gold"
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
 
-        {/* Links de navegação */}
-        <ul className="hidden items-center gap-8 list-none md:flex">
-          {[
-            { label:"Início",    href:"/"          },
-            { label:"Crédito",   href:"/#produtos" },
-            { label:"⚡ Energia", href:"/energia"  },
-            { label:"Afiliados", href:"/afiliados" },
-           // { label:"Blog",      href:"/blog"      },
-            { label:"Ajuda",     href:"/ajuda"     },
-          ].map(item => (
-            <li key={item.label}>
-              <a href={item.href}
-                className="font-['Sora'] text-sm font-semibold text-[#0D1B2A] no-underline transition-colors hover:text-[#1DB954]">
-                {item.label}
+          {/* Links — Desktop */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            {NAV_LINKS.map(l => (
+              <a key={l.label} href={l.href}
+                className="rounded-lg px-3 py-2 font-['Sora'] text-sm font-medium text-[#374151] no-underline transition-all hover:bg-[#f4f6f8] hover:text-[#0f3d22]">
+                {l.label}
               </a>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </nav>
 
-        {/* Ações + Dropdowns */}
-        <div className="relative flex items-center gap-2" ref={dropRef}>
-          {/* Cadastrar */}
+          {/* Ações — Desktop */}
+          <div className="hidden items-center gap-3 lg:flex">
+            <a href="https://wa.me/5561982503427" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl border-2 border-[#25D366] px-4 py-2 font-['Sora'] text-sm font-bold text-[#25D366] no-underline transition-all hover:bg-[#25D366] hover:text-white">
+              💬 WhatsApp
+            </a>
+            <button
+              onClick={onLoginClick ?? (() => window.location.href = "/login")}
+              className="rounded-xl bg-[#0f3d22] px-5 py-2 font-['Sora'] text-sm font-bold text-white transition-all hover:bg-[#1a5c33] hover:shadow-[0_4px_16px_rgba(15,61,34,0.3)]">
+              Entrar
+            </button>
+          </div>
+
+          {/* Hambúrguer — Mobile */}
           <button
-            onClick={() => toggleDropdown("cadastro")}
-            className={`rounded-full border-2 px-4 py-1.5 font-['Sora'] text-xs font-bold transition-all ${
-              dropdown === "cadastro"
-                ? "border-[#1DB954] bg-[#1DB954] text-white"
-                : "border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954] hover:text-white"
-            }`}>
-            Cadastrar
+            onClick={() => setOpen(o => !o)}
+            className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-xl bg-[#f4f6f8] transition-all hover:bg-[#e5e7eb] lg:hidden"
+            aria-label="Menu">
+            <span className={`block h-0.5 w-5 bg-[#0D1B2A] transition-all duration-300 ${open ? "translate-y-2 rotate-45" : ""}`} />
+            <span className={`block h-0.5 w-5 bg-[#0D1B2A] transition-all duration-300 ${open ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-5 bg-[#0D1B2A] transition-all duration-300 ${open ? "-translate-y-2 -rotate-45" : ""}`} />
           </button>
-
-          {/* Entrar */}
-          <button
-            onClick={() => toggleDropdown("login")}
-            className={`rounded-full px-5 py-1.5 font-['Sora'] text-xs font-bold transition-all ${
-              dropdown === "login"
-                ? "bg-[#e06000] text-white shadow-[0_4px_16px_rgba(255,107,0,0.4)]"
-                : "bg-[#FF6B00] text-white hover:bg-[#e06000] hover:shadow-[0_4px_16px_rgba(255,107,0,0.4)]"
-            }`}>
-            Entrar
-          </button>
-
-          {/* Dropdown LOGIN */}
-          {dropdown === "login" && (
-            <div className="absolute right-0 top-[calc(100%+12px)] w-[320px] rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_16px_48px_rgba(0,0,0,0.12)] animate-[fadeUp_0.2s_ease_both]">
-              {/* Seta */}
-              <div className="absolute -top-2 right-16 h-4 w-4 rotate-45 border-l border-t border-[#e5e7eb] bg-white" />
-
-              <div className="mb-1 flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-[#FF6B00]" />
-                <div className="h-1 w-3 rounded-full bg-[#1DB954]" />
-              </div>
-              <h3 className="mb-4 mt-2 font-['Sora'] text-base font-extrabold text-[#0D1B2A]">Acessar minha conta</h3>
-
-              <form onSubmit={handleLogin} className="space-y-3">
-                <div>
-                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">E-mail</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="seu@email.com" required
-                    className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 text-sm outline-none transition-all focus:border-[#FF6B00] focus:bg-white" />
-                </div>
-                <div>
-                  <label className="mb-1 block font-['Sora'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">Senha</label>
-                  <div className="relative">
-                    <input type={showPass ? "text" : "password"} value={pass} onChange={e => setPass(e.target.value)}
-                      placeholder="••••••••" required
-                      className="w-full rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-3 py-2.5 pr-10 text-sm outline-none transition-all focus:border-[#FF6B00] focus:bg-white" />
-                    <button type="button" onClick={() => setShowPass(s => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#9ca3af] hover:text-[#FF6B00] transition-colors">
-                      {showPass ? "🙈" : "👁️"}
-                    </button>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading}
-                  className="w-full rounded-xl bg-[#FF6B00] py-2.5 font-['Sora'] text-sm font-bold text-white shadow-[0_4px_12px_rgba(255,107,0,0.25)] transition-all hover:bg-[#e06000] disabled:opacity-60">
-                  {loading ? "Entrando..." : "Entrar →"}
-                </button>
-
-                <div className="text-center">
-                  <a href="/login" className="font-['Sora'] text-xs text-[#9ca3af] no-underline hover:text-[#1DB954]">
-                    Esqueci minha senha
-                  </a>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Dropdown CADASTRAR */}
-          {dropdown === "cadastro" && (
-            <div className="absolute right-0 top-[calc(100%+12px)] w-[320px] rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-[0_16px_48px_rgba(0,0,0,0.12)] animate-[fadeUp_0.2s_ease_both]">
-              {/* Seta */}
-              <div className="absolute -top-2 right-24 h-4 w-4 rotate-45 border-l border-t border-[#e5e7eb] bg-white" />
-
-              <div className="mb-1 flex items-center gap-2">
-                <div className="h-1 w-6 rounded-full bg-[#1DB954]" />
-                <div className="h-1 w-3 rounded-full bg-[#FF6B00]" />
-              </div>
-              <h3 className="mb-1 mt-2 font-['Sora'] text-base font-extrabold text-[#0D1B2A]">Criar minha conta</h3>
-              <p className="mb-4 font-['Sora'] text-xs text-[#9ca3af]">Escolha como quer se cadastrar</p>
-
-              <div className="space-y-3">
-                {/* Opção 1 — Solicitar crédito */}
-                <button
-                  onClick={() => { setDropdown(null); window.location.href = "/#simulador" }}
-                  className="group flex w-full items-center gap-3 rounded-xl border-2 border-[#e5e7eb] bg-white p-3.5 text-left transition-all hover:border-[#1DB954]/40 hover:bg-[#f0fdf4]">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#e8f8ee] text-xl transition-transform group-hover:scale-110">
-                    💰
-                  </div>
-                  <div>
-                    <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Quero crédito</div>
-                    <div className="font-['Sora'] text-xs text-[#9ca3af]">Simule e solicite seu empréstimo</div>
-                  </div>
-                  <span className="ml-auto text-[#1DB954]">→</span>
-                </button>
-
-                {/* Opção 2 — Ser afiliado */}
-                <button
-                  onClick={() => { setDropdown(null); window.location.href = "/afiliados" }}
-                  className="group flex w-full items-center gap-3 rounded-xl border-2 border-[#e5e7eb] bg-white p-3.5 text-left transition-all hover:border-[#FF6B00]/40 hover:bg-[#fff8f3]">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#fff3e8] text-xl transition-transform group-hover:scale-110">
-                    🔗
-                  </div>
-                  <div>
-                    <div className="font-['Sora'] text-sm font-bold text-[#0D1B2A]">Quero ser afiliado</div>
-                    <div className="font-['Sora'] text-xs text-[#9ca3af]">Indique e ganhe comissões</div>
-                  </div>
-                  <span className="ml-auto text-[#FF6B00]">→</span>
-                </button>
-              </div>
-
-              <div className="mt-4 text-center">
-                <span className="font-['Sora'] text-xs text-[#9ca3af]">Já tem conta? </span>
-                <button onClick={() => setDropdown("login")}
-                  className="font-['Sora'] text-xs font-bold text-[#1DB954] hover:underline">
-                  Entrar
-                </button>
-              </div>
-            </div>
-          )}
         </div>
-      </nav>
+      </header>
+
+      {/* ── OVERLAY ── */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* ── DRAWER MOBILE ── */}
+      <div className={`fixed left-0 right-0 top-[64px] z-40 bg-white shadow-xl transition-all duration-300 lg:hidden ${
+        open ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"
+      }`}>
+        <div className="flex flex-col divide-y divide-[#f4f6f8] px-5 py-2">
+          {NAV_LINKS.map(l => (
+            <a key={l.label} href={l.href}
+              onClick={() => setOpen(false)}
+              className="flex items-center py-4 font-['Sora'] text-base font-medium text-[#374151] no-underline transition-colors hover:text-[#0f3d22]">
+              {l.label}
+              <span className="ml-auto text-[#d1d5db]">›</span>
+            </a>
+          ))}
+        </div>
+
+        {/* Ações mobile */}
+        <div className="flex flex-col gap-3 border-t border-[#f4f6f8] p-5">
+          <a href="https://wa.me/5561982503427" target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#25D366] py-3 font-['Sora'] text-sm font-bold text-[#25D366] no-underline transition-all hover:bg-[#25D366] hover:text-white">
+            💬 Falar no WhatsApp
+          </a>
+          <button
+            onClick={() => { setOpen(false); (onLoginClick ?? (() => window.location.href = "/login"))() }}
+            className="w-full rounded-xl bg-[#0f3d22] py-3 font-['Sora'] text-sm font-bold text-white transition-all hover:bg-[#1a5c33]">
+            Entrar na plataforma
+          </button>
+        </div>
+
+        {/* Rodapé do drawer */}
+        <div className="flex items-center justify-center gap-4 border-t border-[#f4f6f8] px-5 py-4">
+          {["Blog", "Trabalhe Conosco", "Privacidade"].map(l => (
+            <a key={l}
+              href={l === "Blog" ? "/blog" : l === "Trabalhe Conosco" ? "/trabalhe-conosco" : "/ajuda#lgpd"}
+              onClick={() => setOpen(false)}
+              className="font-['Sora'] text-xs text-[#9ca3af] no-underline hover:text-[#0f3d22]">
+              {l}
+            </a>
+          ))}
+        </div>
+      </div>
     </>
   )
 }
