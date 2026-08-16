@@ -14,7 +14,7 @@ const SECURITY_HEADERS = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
-      "connect-src 'self'",
+      "connect-src 'self' https://*.supabase.co https://api.z-api.io https://typebot.io https://app.typebot.io https://api.resend.com https://sandbox.asaas.com https://api.asaas.com https://api.anthropic.com wss://*.supabase.co",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

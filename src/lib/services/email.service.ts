@@ -331,3 +331,92 @@ export async function emailLeadAprovadoAfiliado(params: {
     html
   )
 }
+
+// ── 5. Lead atribuído → correspondente ──────────────────────────────
+export async function emailLeadAtribuidoCorrespondente(params: {
+  email:      string
+  nomeCorr:   string
+  leads:      Array<{
+    nome:     string
+    telefone: string
+    produto:  string
+    cidade?:  string
+    valor?:   number
+  }>
+}) {
+  const total = params.leads.length
+
+  const leadsRows = params.leads.map((l, i) => `
+    <tr style="background:${i % 2 === 0 ? "#ffffff" : "#f9fafb"}">
+      <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#0D1B2A;border-bottom:1px solid #f4f6f8;">
+        ${l.nome}
+      </td>
+      <td style="padding:12px 16px;font-size:13px;color:#374151;border-bottom:1px solid #f4f6f8;">
+        <a href="https://wa.me/55${l.telefone.replace(/\D/g,"")}" style="color:#25D366;text-decoration:none;font-weight:600;">
+          💬 ${l.telefone}
+        </a>
+      </td>
+      <td style="padding:12px 16px;font-size:12px;color:#6b7280;border-bottom:1px solid #f4f6f8;">
+        ${l.produto}
+      </td>
+      <td style="padding:12px 16px;font-size:12px;color:#9ca3af;border-bottom:1px solid #f4f6f8;">
+        ${l.cidade ?? "—"}
+      </td>
+    </tr>
+  `).join("")
+
+  const html = baseTemplate(`
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:16px;">🎯</div>
+      <h1 style="margin:0;font-size:24px;font-weight:900;color:#0D1B2A;">
+        Você recebeu ${total} novo${total !== 1 ? "s" : ""} lead${total !== 1 ? "s" : ""}!
+      </h1>
+      <p style="margin:10px 0 0;font-size:14px;color:#6b7280;">
+        Olá, <strong>${params.nomeCorr}</strong>! Confira abaixo ${total !== 1 ? "os contatos atribuídos" : "o contato atribuído"} a você.
+      </p>
+    </div>
+
+    ${divider()}
+
+    <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7280;">Total de leads recebidos</p>
+      <p style="margin:4px 0 0;font-size:36px;font-weight:900;color:#0f3d22;">${total}</p>
+    </div>
+
+    <!-- Tabela de leads -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <thead>
+        <tr style="background:#f4f6f8;">
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">Cliente</th>
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">WhatsApp</th>
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">Produto</th>
+          <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">Cidade</th>
+        </tr>
+      </thead>
+      <tbody>${leadsRows}</tbody>
+    </table>
+
+    <div style="background:#fff3e8;border:1px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+        <strong>⚡ Importante:</strong> Entre em contato com os clientes o mais breve possível.
+        Leads contatados em até <strong>1 hora</strong> têm 3x mais chance de conversão.
+      </p>
+    </div>
+
+    ${divider()}
+
+    <div style="text-align:center;margin-top:24px;">
+      ${btnPrimary("https://wa.me/5561982503427", "💬 Dúvidas? Falar com o admin")}
+      <p style="margin:14px 0 0;font-size:11px;color:#9ca3af;">
+        Você recebeu este e-mail pois é um correspondente ativo da Crédito Gold.
+      </p>
+    </div>
+  `)
+
+  return send(
+    params.email,
+    `🎯 Você recebeu ${total} novo${total !== 1 ? "s" : ""} lead${total !== 1 ? "s" : ""} — Crédito Gold`,
+    html
+  )
+}
