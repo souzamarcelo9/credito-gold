@@ -19,7 +19,7 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
   const [msg, setMsg]           = useState("")
-  const [activeTab, setActiveTab] = useState<"juros"|"limites"|"redes">("juros")
+  const [activeTab, setActiveTab] = useState<"juros"|"limites"|"redes"|"sistema">("juros")
 
   useEffect(() => {
     fetch("/api/admin/configs")
@@ -73,6 +73,7 @@ export default function ConfiguracoesPage() {
     { key:"juros",   label:"⚡ Taxas de Juros"   },
     { key:"limites", label:"📊 Limites e Prazos"  },
     { key:"redes",   label:"🌐 Redes Sociais"      },
+    { key:"sistema", label:"🔒 Segurança"            },
   ]
 
   return (
@@ -177,6 +178,76 @@ export default function ConfiguracoesPage() {
             <p className="mt-4 text-xs text-[#9ca3af]">
               💡 As alterações aparecem automaticamente no site após salvar.
             </p>
+          </div>
+        )}
+
+
+        {/* Segurança — 2FA */}
+        {activeTab === "sistema" && (
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+              <div className="mb-1 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0D1B2A] text-xl">🔐</div>
+                <div>
+                  <h3 className="font-[\'Sora\'] text-base font-bold text-[#0D1B2A]">Autenticação em 2 Etapas (2FA)</h3>
+                  <p className="font-[\'Sora\'] text-xs text-[#9ca3af]">Exige um código de verificação ao fazer login no painel</p>
+                </div>
+              </div>
+              <div className="mt-5 space-y-4">
+
+                {/* Ativar / Desativar */}
+                <div className="flex items-center justify-between rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] p-4">
+                  <div>
+                    <div className="font-[\'Sora\'] text-sm font-bold text-[#0D1B2A]">Ativar 2FA</div>
+                    <div className="font-[\'Sora\'] text-xs text-[#9ca3af]">Protege o acesso ao painel administrativo</div>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox"
+                      checked={configs["2FA_ATIVO"] !== "false"}
+                      onChange={e => update("2FA_ATIVO", e.target.checked ? "true" : "false")}
+                      className="peer sr-only" />
+                    <div className="peer h-6 w-11 rounded-full bg-[#e5e7eb] transition-all peer-checked:bg-[#1DB954] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-all peer-checked:after:translate-x-5" />
+                  </label>
+                </div>
+
+                {/* Canal */}
+                <div>
+                  <label className="mb-2 block font-[\'Sora\'] text-[0.7rem] font-bold uppercase tracking-[0.06em] text-[#374151]">
+                    Canal de envio do código
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { val:"WHATSAPP", icon:"💬", label:"WhatsApp", desc:"Código via Z-API para o ADMIN_WHATSAPP" },
+                      { val:"EMAIL",    icon:"📧", label:"E-mail",   desc:"Código via Resend para o e-mail do admin" },
+                    ].map(opt => (
+                      <button key={opt.val} type="button"
+                        onClick={() => update("2FA_METODO", opt.val)}
+                        className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                          configs["2FA_METODO"] === opt.val || (!configs["2FA_METODO"] && opt.val === "WHATSAPP")
+                            ? "border-[#1DB954] bg-[#f0fdf4]"
+                            : "border-[#e5e7eb] bg-white hover:border-[#1DB954]/40"
+                        }`}>
+                        <span className="text-2xl">{opt.icon}</span>
+                        <div>
+                          <div className="font-[\'Sora\'] text-sm font-bold text-[#0D1B2A]">{opt.label}</div>
+                          <div className="font-[\'Sora\'] text-xs text-[#9ca3af]">{opt.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="rounded-xl border border-[#e5e7eb] bg-[#f9fafb] p-4">
+                  <div className="font-[\'Sora\'] text-xs text-[#6b7280] leading-relaxed">
+                    <strong>📱 WhatsApp:</strong> O código é enviado para o número <code className="bg-[#e5e7eb] px-1 rounded">ADMIN_WHATSAPP</code> configurado no Vercel.<br/>
+                    <strong>📧 E-mail:</strong> O código é enviado para o e-mail usado no login, via Resend.
+                    <br/><br/>
+                    <span className="text-[#FF6B00] font-semibold">⚠️ Afiliados não passam pelo 2FA.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
