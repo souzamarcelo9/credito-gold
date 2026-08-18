@@ -149,4 +149,5 @@ export async function PUT(req: NextRequest) {
     console.error("[2fa PUT]", e.message)
     return err("Erro ao verificar código", 500)
   }
+  
 }
