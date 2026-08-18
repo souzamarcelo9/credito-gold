@@ -2,11 +2,10 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { loginSchema } from "@/lib/validations"
 
-// Mock users — em produção substitui pela query ao banco
 const MOCK_USERS = [
-  { id:"1", email:"admin@creditogold.com.br",       password:"Admin@123", name:"Administrador",  role:"ADMIN"      },
-  { id:"2", email:"financeiro@creditogold.com.br",  password:"Fin@123",   name:"Financeiro",     role:"FINANCEIRO" },
-  { id:"3", email:"afiliado@creditogold.com.br",    password:"Afil@123",  name:"João Afiliado",  role:"AFILIADO"   },
+  { id:"1", email:"admin@creditogold.com.br",      password:"Admin@123", name:"Administrador", role:"ADMIN"      },
+  { id:"2", email:"financeiro@creditogold.com.br", password:"Fin@123",   name:"Financeiro",    role:"FINANCEIRO" },
+  { id:"3", email:"afiliado@creditogold.com.br",   password:"Afil@123",  name:"João Afiliado", role:"AFILIADO"   },
 ]
 
 async function getUserFromDb(email: string, password: string) {
@@ -22,7 +21,7 @@ async function getUserFromDb(email: string, password: string) {
     const ok = await bcrypt.compare(password, user.password)
     if (!ok) return null
     return {
-      id:         user.id,
+      id:         user.id,        // ← essencial para o 2FA
       email:      user.email,
       name:       user.nome,
       role:       user.role,
@@ -52,6 +51,7 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id         = user.id           // ← adiciona id ao token
         token.role       = (user as any).role
         token.afiliadoId = (user as any).afiliadoId ?? null
       }
@@ -59,6 +59,7 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
+        ;(session.user as any).id         = token.id    // ← expõe id na sessão
         ;(session.user as any).role       = token.role
         ;(session.user as any).afiliadoId = token.afiliadoId ?? null
       }

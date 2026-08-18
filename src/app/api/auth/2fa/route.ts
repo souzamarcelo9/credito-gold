@@ -1,13 +1,10 @@
-// src/app/api/auth/2fa/route.ts
 import { NextRequest } from "next/server"
 import { ok, err } from "@/lib/api-helpers"
 
-// Gera código de 6 dígitos
 function gerarCodigo(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-// Armazena códigos temporários (em produção usar Redis, aqui usamos Supabase)
 async function supabase(path: string, opts: RequestInit = {}) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const key = (process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
@@ -24,23 +21,22 @@ async function supabase(path: string, opts: RequestInit = {}) {
   catch { return { ok: res.ok, data: text } }
 }
 
-// POST /api/auth/2fa — envia código
+// POST — envia código
 export async function POST(req: NextRequest) {
   try {
-    const { userId, email, telefone, metodo } = await req.json()
+    const { userId, email, metodo } = await req.json()
     if (!userId) return err("Usuário inválido", 400)
 
-    // Busca configuração do método preferido
+    // Busca configuração do método
     const configRes = await supabase("configs?chave=eq.2FA_METODO&select=valor")
     const cfgMetodo = Array.isArray(configRes.data) && configRes.data[0]
-      ? configRes.data[0].valor
-      : "WHATSAPP"
-    const canal = metodo ?? cfgMetodo // usa o da config se não especificado
+      ? configRes.data[0].valor : "WHATSAPP"
+    const canal = metodo ?? cfgMetodo
 
-    const codigo = gerarCodigo()
-    const expiraEm = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
+    const codigo    = gerarCodigo()
+    const expiraEm  = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    // Salva código no Supabase
+    // Salva no Supabase
     await supabase("codigos_2fa", {
       method: "POST",
       headers: { "Prefer": "resolution=merge-duplicates" },
@@ -86,28 +82,36 @@ export async function POST(req: NextRequest) {
             `,
           }),
         })
+      } else {
+        console.warn("[2fa] RESEND_API_KEY não configurado")
       }
     } else {
-      // Envia por WhatsApp via Z-API
-      const instanceId  = process.env.ZAPI_INSTANCE_ID
-      const token       = process.env.ZAPI_TOKEN
-      const clientToken = process.env.ZAPI_CLIENT_TOKEN
+      // ── WhatsApp via Z-API ──
+      // Usa ADMIN_WHATSAPP como fallback (já que User não tem campo telefone)
+      const adminPhone = process.env.ADMIN_WHATSAPP
+      const instanceId = process.env.ZAPI_INSTANCE_ID
+      const token      = process.env.ZAPI_TOKEN
+      const clientToken= process.env.ZAPI_CLIENT_TOKEN
 
-      if (instanceId && token && telefone) {
-        const phone = telefone.replace(/\D/g, "")
-        const phoneFormatted = phone.startsWith("55") ? phone : `55${phone}`
-
-        await fetch(
+      if (!adminPhone) {
+        console.warn("[2fa] ADMIN_WHATSAPP não configurado — código gerado mas não enviado:", codigo)
+      } else if (!instanceId || !token) {
+        console.warn("[2fa] Z-API não configurado")
+      } else {
+        const phone = adminPhone.startsWith("55") ? adminPhone : `55${adminPhone}`
+        const res2  = await fetch(
           `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
           {
             method:  "POST",
             headers: { "Content-Type": "application/json", "Client-Token": clientToken ?? "" },
             body: JSON.stringify({
-              phone:   phoneFormatted,
-              message: `🔐 *Crédito Gold — Verificação de Segurança*\n\nSeu código de acesso é:\n\n*${codigo}*\n\nVálido por 10 minutos. Não compartilhe com ninguém.\n\n_Se não foi você, ignore esta mensagem._`,
+              phone,
+              message: `🔐 *Crédito Gold — Verificação de Segurança*\n\nSeu código de acesso ao painel é:\n\n*${codigo}*\n\nVálido por 10 minutos.\nNão compartilhe com ninguém.\n\n_Se não foi você tentando acessar, altere sua senha imediatamente._`,
             }),
           }
         )
+        if (!res2.ok) console.error("[2fa] Erro Z-API:", res2.status)
+        else console.log("[2fa] Código enviado para", phone)
       }
     }
 
@@ -118,15 +122,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT /api/auth/2fa — verifica código
+// PUT — verifica código
 export async function PUT(req: NextRequest) {
   try {
     const { userId, codigo } = await req.json()
     if (!userId || !codigo) return err("Dados inválidos", 400)
 
-    // Busca código válido
+    const agora = new Date().toISOString()
     const res = await supabase(
-      `codigos_2fa?user_id=eq.${userId}&codigo=eq.${codigo}&usado=eq.false&expira_em=gt.${new Date().toISOString()}&select=*&order=created_at.desc&limit=1`
+      `codigos_2fa?user_id=eq.${userId}&codigo=eq.${codigo}&usado=eq.false&expira_em=gt.${agora}&select=*&order=created_at.desc&limit=1`
     )
 
     if (!res.ok || !Array.isArray(res.data) || res.data.length === 0) {
