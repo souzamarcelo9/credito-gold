@@ -10,6 +10,16 @@ function deveIgnorar(payload: any): boolean {
   const phone = payload?.phone ?? payload?.chatId ?? ""
   if (phone.includes("@g.us"))         return true
   if (phone.includes("status"))        return true
+
+  // Ignora respostas ao número do admin (2FA) — evita loop com chatbot
+  const adminPhone = (process.env.ADMIN_WHATSAPP ?? "").replace(/\D/g, "")
+  const fromPhone  = phone.replace(/\D/g, "")
+  if (adminPhone && fromPhone === adminPhone) return true
+
+  // Ignora mensagens de sistema (2FA, notificações internas)
+  const texto = payload?.text?.message ?? payload?.message?.text ?? payload?.body ?? ""
+  if (texto?.startsWith("🔐")) return true
+
   return false
 }
 
