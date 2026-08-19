@@ -83,7 +83,22 @@ export async function GET(
     const prisma  = (await import("@/lib/prisma")).default
     if (!prisma) return err("Banco não disponível", 503)
     const lead    = await prisma.lead.findUnique({ where: { id } })
-    return ok(lead)
+    if (!lead) return err("Lead não encontrado", 404)
+
+    // Descriptografa CPF para exibição
+    let cpfDecrypted = "—"
+    try {
+      if ((lead as any).cpf) {
+        const { decrypt, maskCpf } = await import("@/lib/crypto")
+        const raw = decrypt((lead as any).cpf)
+        // Formata: 000.000.000-00
+        cpfDecrypted = raw.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")
+      }
+    } catch {
+      cpfDecrypted = "***.***.***-**"
+    }
+
+    return ok({ ...lead, cpf: cpfDecrypted })
   } catch {
     return err("Lead não encontrado", 404)
   }

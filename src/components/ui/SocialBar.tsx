@@ -28,6 +28,7 @@ const DEFAULT_REDES = [
   { nome:"YouTube",   key:"youtube",   href:"https://youtube.com/@creditogold"         },
   { nome:"Facebook",  key:"facebook",  href:"https://facebook.com/creditogold"          },
   { nome:"Instagram", key:"instagram", href:"https://instagram.com/creditogold"         },
+  { nome:"TikTok",    key:"tiktok",    href:"https://tiktok.com/@creditogold"           },
   { nome:"LinkedIn",  key:"linkedin",  href:"https://linkedin.com/company/creditogold"  },
   { nome:"WhatsApp",  key:"whatsapp",  href:"https://wa.me/5561982503427"               },
 ]
